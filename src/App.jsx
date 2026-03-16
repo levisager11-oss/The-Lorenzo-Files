@@ -1,16 +1,47 @@
-import { useState, useMemo } from 'react';
-import { AlertTriangle, Database, FileText, Upload } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { AlertTriangle, Database, FileText, Upload, Loader2 } from 'lucide-react';
 import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
 import SecurityBreach from './components/SecurityBreach';
-import { evidenceFiles } from './data/files';
+import { evidenceFiles as initialSeedData } from './data/files';
+import { db, storage } from './lib/firebase';
+import { collection, onSnapshot, addDoc, doc, setDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function App() {
-  const [files, setFiles] = useState(evidenceFiles);
+  const [files, setFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [securityLevel, setSecurityLevel] = useState(0);
   const [breached, setBreached] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    // Listen to Firebase evidenceFiles collection
+    const filesCollection = collection(db, "evidenceFiles");
+    const q = query(filesCollection, orderBy("id", "desc"));
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      if (snapshot.empty) {
+        console.log("Database empty. Seeding initial data...");
+        // Seed initial data if the collection is completely empty
+        const batchSeed = initialSeedData.map(file => {
+          return setDoc(doc(db, "evidenceFiles", file.id.toString()), file);
+        });
+        await Promise.all(batchSeed);
+      } else {
+        const evidenceData = snapshot.docs.map(doc => ({
+          docId: doc.id,
+          ...doc.data()
+        }));
+        setFiles(evidenceData);
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const filteredFiles = useMemo(() => {
     if (!searchQuery.trim()) return files;
@@ -31,46 +62,73 @@ export default function App() {
     setSecurityLevel(0);
   };
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Calculate nice file size
-    const sizeInBytes = file.size;
-    let sizeStr = sizeInBytes + " B";
-    if (sizeInBytes >= 1024 * 1024) {
-      sizeStr = (sizeInBytes / (1024 * 1024)).toFixed(1) + " MB";
-    } else if (sizeInBytes >= 1024) {
-      sizeStr = (sizeInBytes / 1024).toFixed(0) + " KB";
+    setUploading(true);
+    try {
+      // Calculate nice file size
+      const sizeInBytes = file.size;
+      let sizeStr = sizeInBytes + " B";
+      if (sizeInBytes >= 1024 * 1024) {
+        sizeStr = (sizeInBytes / (1024 * 1024)).toFixed(1) + " MB";
+      } else if (sizeInBytes >= 1024) {
+        sizeStr = (sizeInBytes / 1024).toFixed(0) + " KB";
+      }
+
+      // Format today's date
+      const today = new Date().toISOString().split('T')[0];
+
+      // Mock redacted texts for new files
+      const mockRedactedTexts = [
+        "Unauthorized chicken nugget acquisition",
+        "It's just a picture of a stapler",
+        "He forgot his password again",
+        "Definitely not aliens",
+        "Just a very suspicious looking rock"
+      ];
+      const randomRedactedText = mockRedactedTexts[Math.floor(Math.random() * mockRedactedTexts.length)];
+
+      // Upload physical file to Firebase Storage
+      const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // Add metadata + downloadURL to Firestore
+      const newEvidence = {
+        id: Date.now(),
+        name: file.name,
+        date: today,
+        size: sizeStr,
+        status: "CLASSIFIED",
+        redactedText: randomRedactedText,
+        downloadURL: downloadURL
+      };
+
+      await setDoc(doc(db, "evidenceFiles", newEvidence.id.toString()), newEvidence);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Failed to upload the file to Firebase.");
+    } finally {
+      setUploading(false);
+      // reset input
+      event.target.value = '';
     }
-
-    // Format today's date
-    const today = new Date().toISOString().split('T')[0];
-
-    // Mock redacted texts for new files
-    const mockRedactedTexts = [
-      "Unauthorized chicken nugget acquisition",
-      "It's just a picture of a stapler",
-      "He forgot his password again",
-      "Definitely not aliens",
-      "Just a very suspicious looking rock"
-    ];
-    const randomRedactedText = mockRedactedTexts[Math.floor(Math.random() * mockRedactedTexts.length)];
-
-    const newEvidence = {
-      id: Date.now(),
-      name: file.name,
-      date: today,
-      size: sizeStr,
-      status: "CLASSIFIED",
-      redactedText: randomRedactedText,
-    };
-
-    setFiles((prev) => [newEvidence, ...prev]);
-
-    // reset input
-    event.target.value = '';
   };
+
+  if (loading) {
+    return (
+      <div className="relative min-h-screen bg-slate-900 font-sans flex items-center justify-center">
+        <div className="grain-overlay" />
+        <div className="scanlines" />
+        <div className="flex flex-col items-center gap-4 text-slate-500 font-mono">
+          <Loader2 className="w-8 h-8 animate-spin text-doj-gold" />
+          <p className="tracking-widest">ACCESSING CLOUD EVIDENCE ARCHIVE...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-slate-900 font-sans">
@@ -124,13 +182,20 @@ export default function App() {
                   id="file-upload"
                   className="hidden"
                   onChange={handleFileUpload}
+                  disabled={uploading}
                 />
                 <label
                   htmlFor="file-upload"
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 rounded cursor-pointer transition-colors duration-200 text-xs font-mono text-slate-300"
+                  className={`flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded transition-colors duration-200 text-xs font-mono text-slate-300
+                    ${uploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700 cursor-pointer'}
+                  `}
                 >
-                  <Upload className="w-3.5 h-3.5 text-doj-gold" />
-                  <span>UPLOAD U.R.D.</span>
+                  {uploading ? (
+                    <Loader2 className="w-3.5 h-3.5 text-doj-gold animate-spin" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5 text-doj-gold" />
+                  )}
+                  <span>{uploading ? 'UPLOADING...' : 'UPLOAD U.R.D.'}</span>
                 </label>
               </div>
             </div>

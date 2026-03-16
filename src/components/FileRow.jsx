@@ -26,11 +26,28 @@ export default function FileRow({ file, index, onRedactedClick }) {
             </div>
 
             {/* Icon + File Name */}
-            <div className="col-span-4 sm:col-span-3 flex items-center gap-3 min-w-0">
-                <Icon className="w-4 h-4 text-slate-500 shrink-0 group-hover:text-doj-gold transition-colors" />
-                <span className="text-sm font-mono text-slate-300 truncate group-hover:text-slate-100 transition-colors">
-                    {file.name}
-                </span>
+            <div className="col-span-4 sm:col-span-3 flex items-center min-w-0">
+                {file.downloadURL ? (
+                    <a
+                        href={file.downloadURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 min-w-0 hover:underline decoration-doj-gold underline-offset-4"
+                        title="Download U.R.D."
+                    >
+                        <Icon className="w-4 h-4 text-doj-gold shrink-0 transition-colors" />
+                        <span className="text-sm font-mono text-doj-gold truncate transition-colors">
+                            {file.name}
+                        </span>
+                    </a>
+                ) : (
+                    <div className="flex items-center gap-3 min-w-0">
+                        <Icon className="w-4 h-4 text-slate-500 shrink-0 group-hover:text-doj-gold transition-colors" />
+                        <span className="text-sm font-mono text-slate-300 truncate group-hover:text-slate-100 transition-colors">
+                            {file.name}
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Date */}
