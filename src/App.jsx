@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { AlertTriangle, Database, FileText, Upload, Loader2 } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
@@ -238,6 +239,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-slate-900 font-sans">
+      <Analytics />
       {/* Grain overlay */}
       <div className="grain-overlay" />
       {/* Scanlines */}
