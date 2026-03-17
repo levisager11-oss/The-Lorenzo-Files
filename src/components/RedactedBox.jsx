@@ -6,7 +6,7 @@ export default function RedactedBox({ text, onRedactedClick }) {
 
     return (
         <motion.div
-            className="relative inline-block cursor-pointer select-none"
+            className="relative inline-flex cursor-pointer select-none max-w-full"
             onHoverStart={() => setIsHovered(true)}
             onHoverEnd={() => setIsHovered(false)}
             onClick={(e) => {
@@ -15,7 +15,7 @@ export default function RedactedBox({ text, onRedactedClick }) {
             }}
             whileTap={{ scale: 0.97 }}
         >
-            <div className="relative overflow-hidden rounded px-3 py-1 min-w-[180px]">
+            <div className="relative overflow-hidden rounded px-2 py-1 flex items-center justify-center min-w-[100px] sm:min-w-[140px] max-w-full h-7 w-full">
                 {/* The black bar */}
                 <motion.div
                     className="absolute inset-0 bg-black rounded"
@@ -27,8 +27,8 @@ export default function RedactedBox({ text, onRedactedClick }) {
 
                 {/* Revealed text */}
                 <AnimatePresence>
-                    <motion.span
-                        className="relative z-10 text-xs font-mono text-amber-300/90 whitespace-nowrap"
+                    <motion.div
+                        className="relative z-10 w-full px-1 box-border"
                         initial={{ opacity: 0, filter: 'blur(4px)' }}
                         animate={{
                             opacity: isHovered ? 1 : 0,
@@ -36,13 +36,18 @@ export default function RedactedBox({ text, onRedactedClick }) {
                         }}
                         transition={{ duration: 0.3 }}
                     >
-                        {text}
-                    </motion.span>
+                        <div 
+                            className="text-xs font-mono text-amber-300/90 overflow-hidden text-ellipsis whitespace-nowrap text-center" 
+                            title={text}
+                        >
+                            {text}
+                        </div>
+                    </motion.div>
                 </AnimatePresence>
 
                 {/* Redacted label on black bar */}
                 <motion.span
-                    className="absolute inset-0 flex items-center justify-center text-[10px] font-mono text-slate-600 tracking-widest uppercase"
+                    className="absolute inset-0 flex items-center justify-center text-[10px] font-mono text-slate-600 tracking-widest uppercase pointer-events-none"
                     animate={{ opacity: isHovered ? 0 : 1 }}
                     transition={{ duration: 0.2 }}
                 >

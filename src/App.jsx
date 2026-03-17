@@ -4,18 +4,51 @@ import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
 import SecurityBreach from './components/SecurityBreach';
+import UploadModal from './components/UploadModal';
 import { evidenceFiles as initialSeedData } from './data/files';
+import { participantNames } from './data/names';
 import { db, storage } from './lib/firebase';
-import { collection, onSnapshot, addDoc, doc, setDoc, getDocs, query, orderBy } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import {
+  collection,
+  onSnapshot,
+  doc,
+  setDoc,
+  query,
+  orderBy,
+  deleteDoc
+} from 'firebase/firestore';
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} from 'firebase/storage';
 
 export default function App() {
   const [files, setFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSuspect, setSelectedSuspect] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
   const [securityLevel, setSecurityLevel] = useState(0);
   const [breached, setBreached] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Session / Ownership State
+  const [sessionId] = useState(() => {
+    const saved = localStorage.getItem('lorenzo_session_id');
+    if (saved) return saved;
+    const newId = 'suspect_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('lorenzo_session_id', newId);
+    return newId;
+  });
+
+  // Upload State
   const [uploading, setUploading] = useState(false);
+  const [fileToUpload, setFileToUpload] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  
+  // Purge State
+  const [fileToPurge, setFileToPurge] = useState(null);
 
   useEffect(() => {
     // Listen to Firebase evidenceFiles collection
@@ -44,10 +77,24 @@ export default function App() {
   }, []);
 
   const filteredFiles = useMemo(() => {
-    if (!searchQuery.trim()) return files;
-    const q = searchQuery.toLowerCase();
-    return files.filter((f) => f.name.toLowerCase().includes(q));
-  }, [searchQuery, files]);
+    let result = files;
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((f) => f.name.toLowerCase().includes(q));
+    }
+    
+    // Filter by selected suspect
+    if (selectedSuspect) {
+      result = result.filter((f) => {
+        const name = f.suspectName || 'Lorenzo';
+        return name === selectedSuspect;
+      });
+    }
+    
+    return result;
+  }, [searchQuery, selectedSuspect, files]);
 
   const handleRedactedClick = () => {
     const next = securityLevel + 1;
@@ -62,14 +109,40 @@ export default function App() {
     setSecurityLevel(0);
   };
 
-  const handleFileUpload = async (event) => {
+  const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Limit upload size to 50MB
+    const MAX_SIZE = 50 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert(`SECURITY PROTOCOL VIOLATION: FILE "${file.name}" EXCEEDS 50MB LIMIT. REDUCE PAYLOAD SIZE.`);
+      event.target.value = '';
+      return;
+    }
+
+    // Reset the input value so the same file could be selected again if cancelled
+    event.target.value = '';
+
+    // Store file and prompt for context
+    setFileToUpload(file);
+    setShowUploadModal(true);
+  };
+
+  const handleCancelUpload = () => {
+    setFileToUpload(null);
+    setShowUploadModal(false);
+  };
+
+  const processFileUpload = async (contextText, suspectName) => {
+    if (!fileToUpload) return;
+
+    setShowUploadModal(false);
     setUploading(true);
+
     try {
       // Calculate nice file size
-      const sizeInBytes = file.size;
+      const sizeInBytes = fileToUpload.size;
       let sizeStr = sizeInBytes + " B";
       if (sizeInBytes >= 1024 * 1024) {
         sizeStr = (sizeInBytes / (1024 * 1024)).toFixed(1) + " MB";
@@ -80,30 +153,24 @@ export default function App() {
       // Format today's date
       const today = new Date().toISOString().split('T')[0];
 
-      // Mock redacted texts for new files
-      const mockRedactedTexts = [
-        "Unauthorized chicken nugget acquisition",
-        "It's just a picture of a stapler",
-        "He forgot his password again",
-        "Definitely not aliens",
-        "Just a very suspicious looking rock"
-      ];
-      const randomRedactedText = mockRedactedTexts[Math.floor(Math.random() * mockRedactedTexts.length)];
-
       // Upload physical file to Firebase Storage
-      const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      const storagePath = `uploads/${Date.now()}_${fileToUpload.name}`;
+      const storageRef = ref(storage, storagePath);
+      await uploadBytes(storageRef, fileToUpload);
       const downloadURL = await getDownloadURL(storageRef);
 
       // Add metadata + downloadURL to Firestore
       const newEvidence = {
         id: Date.now(),
-        name: file.name,
+        name: fileToUpload.name,
         date: today,
         size: sizeStr,
         status: "CLASSIFIED",
-        redactedText: randomRedactedText,
-        downloadURL: downloadURL
+        redactedText: contextText, // Use user-provided context
+        suspectName: suspectName, // Use user-selected suspect
+        downloadURL: downloadURL,
+        uploadedById: sessionId,    // Track owner
+        storagePath: storagePath    // Facilitate deletion
       };
 
       await setDoc(doc(db, "evidenceFiles", newEvidence.id.toString()), newEvidence);
@@ -112,8 +179,36 @@ export default function App() {
       alert("Failed to upload the file to Firebase.");
     } finally {
       setUploading(false);
-      // reset input
-      event.target.value = '';
+      setFileToUpload(null);
+    }
+  };
+
+  const handleDeleteFile = (file) => {
+    setFileToPurge(file);
+  };
+
+  const confirmPurge = async () => {
+    const file = fileToPurge;
+    setFileToPurge(null);
+    if (!file) return;
+
+    const docId = file.docId || file.id.toString();
+    setDeletingId(docId);
+
+    try {
+      // 1. Delete from Storage if storagePath exists
+      if (file.storagePath) {
+        const storageRef = ref(storage, file.storagePath);
+        await deleteObject(storageRef);
+      }
+
+      // 2. Delete from Firestore
+      await deleteDoc(doc(db, "evidenceFiles", docId));
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      alert("CRITICAL ERROR: Failed to purge record from archive.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -175,19 +270,40 @@ export default function App() {
                 <span>{filteredFiles.length} SHOWING</span>
               </div>
 
-              {/* Upload Button */}
+              {/* Name Filter selector */}
               <div className="ml-4">
+                <select
+                  value={selectedSuspect}
+                  onChange={(e) => setSelectedSuspect(e.target.value)}
+                  className="px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded text-xs font-mono text-slate-300 focus:outline-none focus:border-doj-gold/50 cursor-pointer appearance-none transition-colors"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1rem',
+                    paddingRight: '2rem'
+                  }}
+                >
+                  <option value="">ALL SUSPECTS</option>
+                  {participantNames.map(name => (
+                    <option key={name} value={name}>{name.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Upload Button */}
+              <div className="ml-2">
                 <input
                   type="file"
                   id="file-upload"
                   className="hidden"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
+                  onChange={handleFileSelect}
+                  disabled={uploading || showUploadModal}
                 />
                 <label
                   htmlFor="file-upload"
                   className={`flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded transition-colors duration-200 text-xs font-mono text-slate-300
-                    ${uploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700 cursor-pointer'}
+                    ${(uploading || showUploadModal) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700 cursor-pointer'}
                   `}
                 >
                   {uploading ? (
@@ -218,13 +334,14 @@ export default function App() {
           {/* Evidence Table */}
           <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
             {/* Table Header */}
-            <div className="grid grid-cols-12 gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
-              <div className="col-span-1">#</div>
-              <div className="col-span-4 sm:col-span-3">File Name</div>
-              <div className="col-span-2 hidden sm:block">Date</div>
-              <div className="col-span-1 hidden sm:block">Size</div>
-              <div className="col-span-3 sm:col-span-2 text-center">Status</div>
-              <div className="col-span-4 sm:col-span-3 text-right">Intel</div>
+            <div className="grid grid-cols-[30px_1fr_100px_150px] sm:grid-cols-[40px_1fr_120px_90px_70px_120px_180px] lg:grid-cols-[40px_1fr_120px_100px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+              <div>#</div>
+              <div>File Name</div>
+              <div className="hidden sm:block">Suspect</div>
+              <div className="hidden sm:block">Date</div>
+              <div className="hidden sm:block">Size</div>
+              <div className="text-center">Status</div>
+              <div className="text-right sm:pr-2">Intel</div>
             </div>
 
             {/* File Rows */}
@@ -235,6 +352,9 @@ export default function App() {
                   file={file}
                   index={index}
                   onRedactedClick={handleRedactedClick}
+                  sessionId={sessionId}
+                  onDelete={handleDeleteFile}
+                  isDeleting={deletingId === (file.docId || file.id.toString())}
                 />
               ))
             ) : (
@@ -262,8 +382,47 @@ export default function App() {
         </main>
       </div>
 
+      {showUploadModal && (
+        <UploadModal
+          file={fileToUpload}
+          onClose={handleCancelUpload}
+          onConfirm={(context, suspectName) => processFileUpload(context, suspectName)}
+        />
+      )}
+
       {/* Security Breach Overlay */}
       {breached && <SecurityBreach onDismiss={handleDismissBreach} />}
+
+      {/* Custom Purge Confirmation Modal */}
+      {fileToPurge && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+          <div className="bg-slate-900 border-2 border-red-900/50 rounded-xl p-6 max-w-sm w-full shadow-2xl shadow-red-900/20 animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="font-mono text-xl font-bold text-red-500 mb-2 flex items-center gap-2 uppercase tracking-wider">
+              <AlertTriangle className="w-5 h-5 animate-pulse" />
+              CONFIRM PURGE
+            </h3>
+            <p className="font-mono text-xs text-slate-400 mb-6 leading-relaxed">
+              Are you sure you want to permanently purge <span className="text-red-400 font-bold">"{fileToPurge.name}"</span>? This action is irreversible and will erase the file from the archive.
+            </p>
+            <div className="flex justify-end gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setFileToPurge(null)}
+                className="px-4 py-2 font-mono text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase"
+              >
+                Abort
+              </button>
+              <button
+                type="button"
+                onClick={confirmPurge}
+                className="px-5 py-2 rounded bg-red-900/80 text-white font-mono text-xs font-bold uppercase tracking-widest hover:bg-red-600 border border-red-500 transition-all shadow-lg active:scale-95"
+              >
+                EXECUTE PURGE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

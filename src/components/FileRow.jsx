@@ -1,4 +1,4 @@
-import { Folder, FileLock } from 'lucide-react';
+import { Folder, FileLock, Trash2, Loader2 } from 'lucide-react';
 import RedactedBox from './RedactedBox';
 
 const statusBadge = {
@@ -15,63 +15,137 @@ const statusIcon = {
     'UNDER REVIEW': Folder,
 };
 
-export default function FileRow({ file, index, onRedactedClick }) {
+export default function FileRow({ file, index, onRedactedClick, sessionId, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
+    const isOwner = file.uploadedById === sessionId;
+
+    const handleDoubleClick = async () => {
+        if (!file.downloadURL) return;
+
+        try {
+            // Fetch the file as a Blob
+            const response = await fetch(file.downloadURL);
+            const blob = await response.blob();
+
+            // Create a temporary Blob URL
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            // Create a hidden anchor to force download
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+
+            // Cleanup
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error("Error downloading file:", error);
+            alert("Failed to download the file.");
+        }
+    };
 
     return (
-        <div className="file-row grid grid-cols-12 gap-2 items-center px-4 sm:px-6 py-3 border-b border-slate-800/60 group">
+        <div
+            className={`file-row grid grid-cols-[40px_1fr_120px_90px_70px_120px_180px] lg:grid-cols-[40px_1fr_120px_100px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 border-b border-slate-800/60 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+            onDoubleClick={(e) => {
+                if (isDeleting) return;
+                handleDoubleClick(e);
+            }}
+            title={file.downloadURL ? "Double-click to download" : undefined}
+        >
             {/* Index */}
-            <div className="col-span-1 text-xs font-mono text-slate-600">
+            <div className="text-xs font-mono text-slate-600">
                 {String(index + 1).padStart(3, '0')}
             </div>
 
             {/* Icon + File Name */}
-            <div className="col-span-4 sm:col-span-3 flex items-center min-w-0">
+            <div className="flex items-center min-w-0">
                 {file.downloadURL ? (
                     <a
                         href={file.downloadURL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 min-w-0 hover:underline decoration-doj-gold underline-offset-4"
-                        title="Download U.R.D."
+                        title="Open in new tab"
+                        onClick={(e) => e.stopPropagation()} // Prevent double-click trigger when clicking link directly
                     >
                         <Icon className="w-4 h-4 text-doj-gold shrink-0 transition-colors" />
-                        <span className="text-sm font-mono text-doj-gold truncate transition-colors">
+                        <span className="text-sm font-mono text-doj-gold truncate transition-colors block">
                             {file.name}
                         </span>
                     </a>
                 ) : (
                     <div className="flex items-center gap-3 min-w-0">
                         <Icon className="w-4 h-4 text-slate-500 shrink-0 group-hover:text-doj-gold transition-colors" />
-                        <span className="text-sm font-mono text-slate-300 truncate group-hover:text-slate-100 transition-colors">
+                        <span className="text-sm font-mono text-slate-300 truncate group-hover:text-slate-100 transition-colors block">
                             {file.name}
                         </span>
                     </div>
                 )}
             </div>
 
+            {/* Suspect */}
+            <div className="hidden sm:flex items-center text-xs font-mono text-slate-400 min-w-0">
+                <span className="truncate block w-full" title={file.suspectName || 'LEGACY CLEARANCE'}>
+                    {file.suspectName || 'LORENZO'}
+                </span>
+            </div>
+
             {/* Date */}
-            <div className="col-span-2 hidden sm:block text-xs font-mono text-slate-500">
+            <div className="hidden sm:block text-xs font-mono text-slate-500 whitespace-nowrap">
                 {file.date}
             </div>
 
             {/* Size */}
-            <div className="col-span-1 hidden sm:block text-xs font-mono text-slate-500">
+            <div className="hidden sm:block text-xs font-mono text-slate-500 whitespace-nowrap">
                 {file.size}
             </div>
 
             {/* Status Badge */}
-            <div className="col-span-3 sm:col-span-2 flex justify-center">
+            <div className="flex justify-center shrink-0">
                 <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-wider ${statusBadge[file.status]}`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-wider whitespace-nowrap ${statusBadge[file.status]}`}
                 >
                     {file.status}
                 </span>
             </div>
 
-            {/* Redacted Box */}
-            <div className="col-span-4 sm:col-span-3 flex justify-end">
-                <RedactedBox text={file.redactedText} onRedactedClick={onRedactedClick} />
+            {/* Action / Intel Area */}
+            <div className="flex justify-end items-center gap-2 sm:gap-4 min-w-0 w-full overflow-hidden">
+                {isOwner && (
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!isDeleting) onDelete(file);
+                        }}
+                        disabled={isDeleting}
+                        className={`shrink-0 p-1.5 px-3 flex items-center gap-2 border rounded transition-all group/purge z-20 outline-none
+                            ${isDeleting 
+                                ? 'border-slate-700 bg-slate-800/50 text-slate-500 cursor-not-allowed' 
+                                : 'border-red-900/40 bg-red-950/20 text-red-500 hover:bg-red-900/40 hover:text-red-400 hover:scale-105 active:scale-95'
+                            }`}
+                        title={isDeleting ? "Purging record..." : "Purge from Archive"}
+                    >
+                        {isDeleting ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                        <span className="text-[10px] font-mono tracking-tighter hidden xl:block">
+                            {isDeleting ? 'PURGING...' : 'PURGE'}
+                        </span>
+                    </button>
+                )}
+                <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    className={`min-w-0 overflow-hidden w-full flex justify-end transition-opacity ${isDeleting ? 'opacity-50' : 'opacity-100'}`}
+                >
+                    <RedactedBox text={file.redactedText} onRedactedClick={onRedactedClick} />
+                </div>
             </div>
         </div>
     );

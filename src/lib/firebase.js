@@ -3,13 +3,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAF6VZbcA1Pumr3W7jkRXwCL8jIJtAM1TM",
-    authDomain: "the-lorenzo-files.firebaseapp.com",
-    projectId: "the-lorenzo-files",
-    storageBucket: "the-lorenzo-files.firebasestorage.app",
-    messagingSenderId: "518134782301",
-    appId: "1:518134782301:web:7cf0f888acbc1743d370b4",
-    measurementId: "G-Q9KXPVHHVC"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
