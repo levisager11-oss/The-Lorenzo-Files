@@ -24,7 +24,13 @@ import {
   deleteObject
 } from 'firebase/storage';
 
+import LoginScreen from './components/LoginScreen';
+
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('lorenzo_clearance') === 'GRANTED';
+  });
+
   const [files, setFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSuspect, setSelectedSuspect] = useState('');
@@ -41,6 +47,11 @@ export default function App() {
     localStorage.setItem('lorenzo_session_id', newId);
     return newId;
   });
+
+  const handleLoginSuccess = () => {
+    sessionStorage.setItem('lorenzo_clearance', 'GRANTED');
+    setIsAuthenticated(true);
+  };
 
   // Upload State
   const [uploading, setUploading] = useState(false);
@@ -207,6 +218,10 @@ export default function App() {
       setDeletingId(null);
     }
   };
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
 
   if (loading) {
     return (
