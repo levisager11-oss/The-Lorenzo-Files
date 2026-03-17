@@ -57,12 +57,8 @@ export default function App() {
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       if (snapshot.empty) {
-        console.log("Database empty. Seeding initial data...");
-        // Seed initial data if the collection is completely empty
-        const batchSeed = initialSeedData.map(file => {
-          return setDoc(doc(db, "evidenceFiles", file.id.toString()), file);
-        });
-        await Promise.all(batchSeed);
+        setFiles([]);
+        setLoading(false);
       } else {
         const evidenceData = snapshot.docs.map(doc => ({
           docId: doc.id,
