@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ShieldAlert, Skull, X } from 'lucide-react';
 
 export default function SecurityBreach({ onDismiss }) {
