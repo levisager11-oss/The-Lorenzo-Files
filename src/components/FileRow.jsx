@@ -48,7 +48,7 @@ export default function FileRow({ file, index, onRedactedClick, sessionId, onDel
 
     return (
         <div
-            className={`file-row grid grid-cols-[40px_1fr_120px_90px_70px_120px_180px] lg:grid-cols-[40px_1fr_120px_100px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 border-b border-slate-800/60 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+            className={`file-row grid grid-cols-[40px_1fr_120px_130px_70px_120px_180px] lg:grid-cols-[40px_1fr_120px_140px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 border-b border-slate-800/60 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
             onDoubleClick={(e) => {
                 if (isDeleting) return;
                 handleDoubleClick(e);
