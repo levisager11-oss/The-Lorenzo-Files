@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RedactedBox({ text, onRedactedClick }) {
     const [isHovered, setIsHovered] = useState(false);
