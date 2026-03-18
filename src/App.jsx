@@ -37,7 +37,7 @@ export default function App() {
   const [deletingId, setDeletingId] = useState(null);
   const [securityLevel, setSecurityLevel] = useState(0);
   const [breached, setBreached] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Session / Ownership State
   const [sessionId] = useState(() => {
