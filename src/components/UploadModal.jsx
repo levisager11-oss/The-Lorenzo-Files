@@ -4,7 +4,7 @@ import { participantNames } from '../data/names';
 
 export default function UploadModal({ file, onClose, onConfirm }) {
     const [context, setContext] = useState('');
-    const [suspectName, setSuspectName] = useState('');
+    const [suspectNames, setSuspectNames] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showNameList, setShowNameList] = useState(false);
     const inputRef = useRef(null);
@@ -30,8 +30,16 @@ export default function UploadModal({ file, onClose, onConfirm }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!suspectName) return;
-        onConfirm(context.trim() || 'No context provided.', suspectName);
+        if (suspectNames.length === 0) return;
+        onConfirm(context.trim() || 'No context provided.', suspectNames);
+    };
+
+    const toggleSuspect = (name) => {
+        setSuspectNames(prev =>
+            prev.includes(name)
+                ? prev.filter(n => n !== name)
+                : [...prev, name]
+        );
     };
 
     const filteredNames = participantNames.filter(name =>
@@ -79,20 +87,20 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                     {/* Suspect Name Selection */}
                     <div className="space-y-2 relative" ref={dropdownRef}>
                         <label className="block font-mono text-xs text-slate-400 tracking-wider uppercase">
-                            Target Suspect:
+                            Target Suspect(s):
                         </label>
                         <div className="relative">
                             <div
-                                onClick={() => setShowNameList(true)}
-                                className={`w-full bg-slate-800/50 border ${suspectName ? 'border-doj-gold/40' : 'border-slate-700'} rounded-lg p-3 font-mono text-sm cursor-pointer flex items-center justify-between transition-all hover:bg-slate-800/80`}
+                                onClick={() => setShowNameList(!showNameList)}
+                                className={`w-full bg-slate-800/50 border ${suspectNames.length > 0 ? 'border-doj-gold/40' : 'border-slate-700'} rounded-lg p-3 font-mono text-sm cursor-pointer flex items-center justify-between transition-all hover:bg-slate-800/80`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <User className={`w-4 h-4 ${suspectName ? 'text-doj-gold' : 'text-slate-500'}`} />
-                                    <span className={suspectName ? 'text-slate-100' : 'text-slate-500'}>
-                                        {suspectName || 'SELECT SUSPECT...'}
+                                    <User className={`w-4 h-4 ${suspectNames.length > 0 ? 'text-doj-gold' : 'text-slate-500'}`} />
+                                    <span className={suspectNames.length > 0 ? 'text-slate-100 truncate pr-4' : 'text-slate-500'} style={{maxWidth: '300px'}}>
+                                        {suspectNames.length > 0 ? suspectNames.join(', ') : 'SELECT SUSPECTS...'}
                                     </span>
                                 </div>
-                                {suspectName && <Check className="w-4 h-4 text-doj-gold" />}
+                                {suspectNames.length > 0 && <span className="text-doj-gold text-xs font-bold bg-doj-gold/20 px-2 py-0.5 rounded">{suspectNames.length}</span>}
                             </div>
 
                             {showNameList && (
@@ -103,27 +111,30 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                                             type="text"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            placeholder="SEARCH SUSPECT..."
+                                            placeholder="SEARCH SUSPECTS..."
                                             className="bg-transparent border-none focus:ring-0 text-xs font-mono text-slate-200 w-full placeholder:text-slate-600"
                                             autoFocus
+                                            onClick={(e) => e.stopPropagation()}
                                         />
                                     </div>
                                     <div className="max-h-48 overflow-y-auto custom-scrollbar">
                                         {filteredNames.length > 0 ? (
-                                            filteredNames.map(name => (
-                                                <div
-                                                    key={name}
-                                                    onClick={() => {
-                                                        setSuspectName(name);
-                                                        setShowNameList(false);
-                                                        setSearchTerm('');
-                                                    }}
-                                                    className={`px-4 py-2.5 font-mono text-xs cursor-pointer hover:bg-slate-700/50 transition-colors flex items-center justify-between ${suspectName === name ? 'bg-doj-gold/10 text-doj-gold' : 'text-slate-300 hover:text-white'}`}
-                                                >
-                                                    {name}
-                                                    {suspectName === name && <Check className="w-3 h-3" />}
-                                                </div>
-                                            ))
+                                            filteredNames.map(name => {
+                                                const isSelected = suspectNames.includes(name);
+                                                return (
+                                                    <div
+                                                        key={name}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleSuspect(name);
+                                                        }}
+                                                        className={`px-4 py-2.5 font-mono text-xs cursor-pointer hover:bg-slate-700/50 transition-colors flex items-center justify-between ${isSelected ? 'bg-doj-gold/10 text-doj-gold' : 'text-slate-300 hover:text-white'}`}
+                                                    >
+                                                        {name}
+                                                        {isSelected && <Check className="w-3 h-3" />}
+                                                    </div>
+                                                );
+                                            })
                                         ) : (
                                             <div className="px-4 py-4 font-mono text-[10px] text-red-500/70 text-center uppercase tracking-widest">
                                                 NO CLEARANCE FOUND
@@ -167,9 +178,9 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                         </button>
                         <button
                             type="submit"
-                            disabled={!suspectName || !context.trim()}
+                            disabled={suspectNames.length === 0 || !context.trim()}
                             className={`font-mono text-xs font-bold px-6 py-2.5 rounded border transition-all tracking-widest uppercase shadow-lg select-none ${
-                                !suspectName || !context.trim()
+                                suspectNames.length === 0 || !context.trim()
                                     ? 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'
                                     : 'bg-doj-gold text-slate-950 border-doj-gold hover:bg-yellow-500 hover:border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)] active:scale-95'
                             }`}

@@ -141,7 +141,7 @@ export default function App() {
     setShowUploadModal(false);
   };
 
-  const processFileUpload = async (contextText, suspectName) => {
+  const processFileUpload = async (contextText, suspectNames) => {
     if (!fileToUpload) return;
 
     setShowUploadModal(false);
@@ -168,6 +168,9 @@ export default function App() {
       await uploadBytes(storageRef, fileToUpload);
       const downloadURL = await getDownloadURL(storageRef);
 
+      // Convert suspectNames array to comma separated string if it's an array
+      const suspectNameStr = Array.isArray(suspectNames) ? suspectNames.join(', ') : suspectNames;
+
       // Add metadata + downloadURL to Firestore
       const newEvidence = {
         id: Date.now(),
@@ -176,7 +179,7 @@ export default function App() {
         size: sizeStr,
         status: "CLASSIFIED",
         redactedText: contextText, // Use user-provided context
-        suspectName: suspectName, // Use user-selected suspect
+        suspectName: suspectNameStr, // Store user-selected suspects as a string
         downloadURL: downloadURL,
         uploadedById: sessionId,    // Track owner
         storagePath: storagePath    // Facilitate deletion
@@ -400,7 +403,7 @@ export default function App() {
         <UploadModal
           file={fileToUpload}
           onClose={handleCancelUpload}
-          onConfirm={(context, suspectName) => processFileUpload(context, suspectName)}
+          onConfirm={(context, suspectNames) => processFileUpload(context, suspectNames)}
         />
       )}
 
