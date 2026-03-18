@@ -6,7 +6,6 @@ import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
 import SecurityBreach from './components/SecurityBreach';
 import UploadModal from './components/UploadModal';
-import { evidenceFiles as initialSeedData } from './data/files';
 import { participantNames } from './data/names';
 import { db, storage } from './lib/firebase';
 import {
@@ -38,7 +37,7 @@ export default function App() {
   const [deletingId, setDeletingId] = useState(null);
   const [securityLevel, setSecurityLevel] = useState(0);
   const [breached, setBreached] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Session / Ownership State
   const [sessionId] = useState(() => {
@@ -168,7 +167,9 @@ export default function App() {
       }
 
       // Format today's date
-      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const pad = (num) => num.toString().padStart(2, '0');
+      const formattedDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
       // Upload physical file to Firebase Storage
       const storagePath = `uploads/${Date.now()}_${fileToUpload.name}`;
@@ -180,7 +181,7 @@ export default function App() {
       const newEvidence = {
         id: Date.now(),
         name: fileToUpload.name,
-        date: today,
+        date: formattedDate,
         size: sizeStr,
         status: "CLASSIFIED",
         redactedText: contextText, // Use user-provided context
@@ -356,7 +357,7 @@ export default function App() {
           {/* Evidence Table */}
           <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
             {/* Table Header */}
-            <div className="grid grid-cols-[30px_1fr_100px_150px] sm:grid-cols-[40px_1fr_120px_90px_70px_120px_180px] lg:grid-cols-[40px_1fr_120px_100px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+            <div className="grid grid-cols-[30px_1fr_100px_150px] sm:grid-cols-[40px_1fr_120px_130px_70px_120px_180px] lg:grid-cols-[40px_1fr_120px_140px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
               <div>#</div>
               <div>File Name</div>
               <div className="hidden sm:block">Suspect</div>
