@@ -1,4 +1,22 @@
-# React + Vite
+# The Lorenzo Files
+
+## Setup
+
+### Environment Variables
+
+This project requires a Firebase project. Never commit real credentials to the repository.
+
+1. Copy `.env.example` to `.env.local`:
+   ```bash
+   cp .env.example .env.local
+   ```
+2. Fill in your values in `.env.local` using the Firebase Console (**Project Settings → General → Your apps**).
+
+The `.env.local` file is listed in `.gitignore` and will never be committed.
+
+---
+
+*Built with React + Vite*
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
