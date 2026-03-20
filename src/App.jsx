@@ -69,6 +69,15 @@ export default function App() {
     const filesCollection = collection(db, "evidenceFiles");
     const q = query(filesCollection, orderBy("id", "desc"));
 
+    // MOCK FOR PLAYWRIGHT
+    if (window.MOCK_FIREBASE) {
+      setTimeout(() => {
+        setFiles([]);
+        setLoading(false);
+      }, 100);
+      return () => {};
+    }
+
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       if (snapshot.empty) {
         setFiles([]);
@@ -265,6 +274,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-slate-900 font-sans">
+      <Analytics />
       {/* Grain overlay */}
       <div className="grain-overlay" />
       {/* Scanlines */}
