@@ -1,4 +1,4 @@
-import { Folder, FileLock, Trash2, Loader2 } from 'lucide-react';
+import { Folder, FileLock, Trash2, Loader2, ShieldAlert } from 'lucide-react';
 import RedactedBox from './RedactedBox';
 import VoteButtons from './VoteButtons';
 
@@ -16,9 +16,9 @@ const statusIcon = {
     'UNDER REVIEW': Folder,
 };
 
-export default function FileRow({ file, index, onRedactedClick, sessionId, onDelete, isDeleting }) {
+export default function FileRow({ file, index, onRedactedClick, user, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
-    const isOwner = file.uploadedById === sessionId;
+    const isOwner = file.uploadedById === user?.uid;
 
     const handleDoubleClick = async () => {
         if (!file.downloadURL) return;
@@ -63,11 +63,7 @@ export default function FileRow({ file, index, onRedactedClick, sessionId, onDel
 
             {/* Votes */}
             <div className="flex justify-center items-center h-full">
-                <VoteButtons 
-                    fileId={file.docId || file.id.toString()} 
-                    initialUpvotes={file.upvotes || 0} 
-                    initialDownvotes={file.downvotes || 0} 
-                />
+                <VoteButtons file={file} user={user} />
             </div>
 
             {/* Icon + File Name */}
@@ -124,32 +120,40 @@ export default function FileRow({ file, index, onRedactedClick, sessionId, onDel
 
             {/* Action / Intel Area */}
             <div className="flex justify-end items-center gap-2 sm:gap-4 min-w-0 w-full overflow-hidden">
-                {isOwner && (
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (!isDeleting) onDelete(file);
-                        }}
-                        disabled={isDeleting}
-                        className={`shrink-0 p-1.5 px-3 flex items-center gap-2 border rounded transition-all group/purge z-20 outline-none
-                            ${isDeleting 
-                                ? 'border-slate-700 bg-slate-800/50 text-slate-500 cursor-not-allowed' 
-                                : 'border-red-900/40 bg-red-950/20 text-red-500 hover:bg-red-900/40 hover:text-red-400 hover:scale-105 active:scale-95'
-                            }`}
-                        title={isDeleting ? "Purging record..." : "Purge from Archive"}
-                    >
-                        {isDeleting ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                        )}
-                        <span className="text-[10px] font-mono tracking-tighter hidden xl:block">
-                            {isDeleting ? 'PURGING...' : 'PURGE'}
-                        </span>
-                    </button>
-                )}
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (isOwner && !isDeleting) onDelete(file);
+                    }}
+                    disabled={!isOwner || isDeleting}
+                    className={`shrink-0 p-1.5 px-3 flex items-center gap-2 border rounded transition-all group/purge z-20 outline-none
+                        ${isDeleting 
+                            ? 'border-slate-700 bg-slate-800/50 text-slate-500 cursor-not-allowed' 
+                            : isOwner
+                                ? 'border-red-900/40 bg-red-950/20 text-red-500 hover:bg-red-900/40 hover:text-red-400 hover:scale-105 active:scale-95'
+                                : 'border-slate-800/60 bg-slate-900/40 text-slate-600 cursor-not-allowed'
+                        }`}
+                    title={
+                        isDeleting 
+                            ? "Purging record..." 
+                            : isOwner 
+                                ? "Purge from Archive" 
+                                : "OWNERSHIP UNVERIFIED - CANNOT PURGE"
+                    }
+                >
+                    {isDeleting ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : !isOwner ? (
+                        <ShieldAlert className="w-3.5 h-3.5 opacity-50" />
+                    ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    <span className="text-[10px] font-mono tracking-tighter hidden xl:block">
+                        {isDeleting ? 'PURGING...' : 'PURGE'}
+                    </span>
+                </button>
                 <div 
                     onClick={(e) => e.stopPropagation()} 
                     className={`min-w-0 overflow-hidden w-full flex justify-end transition-opacity ${isDeleting ? 'opacity-50' : 'opacity-100'}`}

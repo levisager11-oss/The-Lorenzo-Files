@@ -1,99 +1,79 @@
 import { useState, useEffect } from 'react';
-// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { doc, runTransaction } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { voteOnFile } from '../lib/voteOnFile';
 
-export default function VoteButtons({ fileId, initialUpvotes = 0, initialDownvotes = 0 }) {
-  const [userVote, setUserVote] = useState(0);
-  const [isVoting, setIsVoting] = useState(false);
+export default function VoteButtons({ file, user }) {
+    const [myVote, setMyVote] = useState(null);
+    const [isVoting, setIsVoting] = useState(false);
 
-  useEffect(() => {
-    const savedVote = localStorage.getItem(`lolo_vote_${fileId}`);
-    if (savedVote) {
-      setUserVote(parseInt(savedVote, 10));
-    }
-  }, [fileId]);
+    // Sync myVote from Firestore
+    useEffect(() => {
+        if (!user || !file.id) return;
+        const ref = doc(db, "evidenceFiles", file.docId || file.id.toString(), "voters", user.uid);
+        const unsub = onSnapshot(ref, (snap) => {
+            setMyVote(snap.exists() ? snap.data().vote : null);
+        });
+        return unsub;
+    }, [file.id, file.docId, user]);
 
-  const handleVote = async (type) => {
-    if (isVoting) return;
-    setIsVoting(true);
-
-    const isToggleOff = userVote === type;
-    const newVote = isToggleOff ? 0 : type;
-
-    try {
-      const fileRef = doc(db, "evidenceFiles", fileId.toString());
-
-      await runTransaction(db, async (transaction) => {
-        const fileDoc = await transaction.get(fileRef);
-        if (!fileDoc.exists()) {
-          throw new Error("Document does not exist!");
+    const handleVote = async (type) => {
+        if (isVoting || !user) return;
+        setIsVoting(true);
+        try {
+            await voteOnFile(file.docId || file.id.toString(), user.uid, type);
+        } catch (error) {
+            console.error("Voting failed:", error);
+            // Re-throw or show alert depending on strictness
+        } finally {
+            setIsVoting(false);
         }
+    };
 
-        const data = fileDoc.data();
-        let upvotes = data.upvotes || 0;
-        let downvotes = data.downvotes || 0;
+    const upvotes = file.upvotes || 0;
+    const downvotes = file.downvotes || 0;
+    const score = upvotes - downvotes;
 
-        // Revert previous vote if any
-        if (userVote === 1) upvotes -= 1;
-        if (userVote === -1) downvotes -= 1;
+    // Determine color of the score
+    let scoreColor = 'text-slate-500';
+    if (score > 0) scoreColor = 'text-doj-gold';
+    if (score < 0) scoreColor = 'text-red-500';
 
-        // Apply new vote
-        if (newVote === 1) upvotes += 1;
-        if (newVote === -1) downvotes += 1;
+    return (
+        <div className={`flex flex-col items-center justify-center gap-1 ${isVoting ? 'opacity-40 cursor-not-allowed' : ''}`}>
+            <motion.button
+                whileHover={!isVoting ? { scale: 1.2 } : {}}
+                whileTap={!isVoting ? { scale: 0.9 } : {}}
+                onClick={(e) => { e.stopPropagation(); handleVote('up'); }}
+                disabled={isVoting}
+                className={`p-1 rounded transition-colors ${
+                    myVote === 'up' 
+                        ? 'text-doj-gold bg-doj-gold/10 shadow-[0_0_10px_rgba(245,158,11,0.2)]' 
+                        : 'text-slate-500 hover:text-doj-gold hover:bg-slate-800'
+                }`}
+            >
+                <ChevronUp className="w-5 h-5" strokeWidth={myVote === 'up' ? 3 : 2} />
+            </motion.button>
+            
+            <div className={`font-mono text-xs font-bold w-8 text-center flex items-center justify-center ${scoreColor}`}>
+                {isVoting ? <Loader2 className="w-3 h-3 animate-spin text-slate-400" /> : score}
+            </div>
 
-        transaction.update(fileRef, { upvotes, downvotes });
-      });
-
-      // Transaction successful, update local state
-      setUserVote(newVote);
-      if (newVote === 0) {
-        localStorage.removeItem(`lolo_vote_${fileId}`);
-      } else {
-        localStorage.setItem(`lolo_vote_${fileId}`, newVote.toString());
-      }
-    } catch (error) {
-      console.error("Voting failed: ", error);
-    } finally {
-      setIsVoting(false);
-    }
-  };
-
-  const score = initialUpvotes - initialDownvotes;
-  
-  let scoreColor = 'text-slate-500';
-  if (score > 0) scoreColor = 'text-doj-gold';
-  else if (score < 0) scoreColor = 'text-red-500';
-
-  return (
-    <div className="flex flex-col items-center justify-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-      <motion.button
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => handleVote(1)}
-        disabled={isVoting}
-        className={`p-1 rounded transition-colors ${userVote === 1 ? 'text-doj-gold' : 'text-slate-500 hover:text-slate-300'} disabled:opacity-50`}
-        title="Upvote"
-      >
-        <ChevronUp className="w-4 h-4" />
-      </motion.button>
-      
-      <span className={`text-[10px] font-mono font-bold leading-none ${scoreColor}`}>
-        {score}
-      </span>
-      
-      <motion.button
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => handleVote(-1)}
-        disabled={isVoting}
-        className={`p-1 rounded transition-colors ${userVote === -1 ? 'text-doj-gold' : 'text-slate-500 hover:text-slate-300'} disabled:opacity-50`}
-        title="Downvote"
-      >
-        <ChevronDown className="w-4 h-4" />
-      </motion.button>
-    </div>
-  );
+            <motion.button
+                whileHover={!isVoting ? { scale: 1.2 } : {}}
+                whileTap={!isVoting ? { scale: 0.9 } : {}}
+                onClick={(e) => { e.stopPropagation(); handleVote('down'); }}
+                disabled={isVoting}
+                className={`p-1 rounded transition-colors ${
+                    myVote === 'down' 
+                        ? 'text-red-500 bg-red-500/10 shadow-[0_0_10px_rgba(239,68,68,0.2)]' 
+                        : 'text-slate-500 hover:text-red-500 hover:bg-slate-800'
+                }`}
+            >
+                <ChevronDown className="w-5 h-5" strokeWidth={myVote === 'down' ? 3 : 2} />
+            </motion.button>
+        </div>
+    );
 }

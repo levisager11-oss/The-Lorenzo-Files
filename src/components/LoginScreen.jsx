@@ -1,162 +1,166 @@
-import { useState, useRef, useEffect } from 'react';
-import { ShieldAlert, Terminal, Lock, KeyRound } from 'lucide-react';
+import { useState } from 'react';
+import { Terminal, Lock, AlertTriangle, User } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
-export default function LoginScreen({ onLoginSuccess }) {
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
-  const [attempts, setAttempts] = useState(0);
-  const [shake, setShake] = useState(false);
-  const inputRef = useRef(null);
+export default function LoginScreen() {
+    const [mode, setMode] = useState('signin'); // 'signin' | 'register'
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [codename, setCodename] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-  // Auto-focus the input on mount
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const correctPassword = import.meta.env.VITE_SITE_PASSWORD;
-    
-    if (password === correctPassword) {
-      setError(false);
-      onLoginSuccess();
-    } else {
-      setError(true);
-      setAttempts(prev => prev + 1);
-      setShake(true);
-      setPassword('');
-      
-      // Remove shake class after animation completes
-      setTimeout(() => setShake(false), 500);
-      
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }
-  };
-
-  return (
-    <div className="relative min-h-screen bg-slate-950 font-sans flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Grain overlay */}
-      <div className="grain-overlay pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-overlay" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")'}} />
-      {/* Scanlines */}
-      <div className="scanlines pointer-events-none absolute inset-0 z-0 opacity-10" style={{background: 'linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.4) 51%)', backgroundSize: '100% 4px'}} />
-      
-      <div className={`relative z-10 max-w-md w-full space-y-8 p-8 sm:p-10 bg-slate-900/80 border-2 rounded-xl backdrop-blur-md shadow-2xl transition-all duration-300 ${error ? 'border-red-900/70 shadow-red-900/20' : 'border-slate-800 shadow-black'}`}>
-        
-        {/* DOJ Header */}
-        <div className="text-center">
-          <div className="mx-auto h-20 w-20 bg-slate-950 border-2 border-slate-800 rounded-full flex items-center justify-center mb-6 shadow-inner relative overflow-hidden">
-            <div className="absolute inset-0 bg-doj-gold/5 animate-pulse"></div>
-            {error ? (
-              <ShieldAlert className={`h-10 w-10 text-red-500`} />
-            ) : (
-              <Lock className="h-10 w-10 text-doj-gold opacity-90" />
-            )}
-          </div>
-          
-          <h2 className="mt-2 text-2xl font-mono font-bold text-white tracking-widest uppercase">
-            RESTRICTED ARCHIVE
-          </h2>
-          <p className="mt-3 text-xs font-mono text-slate-400 tracking-wider">
-            DEPARTMENT OF LORENZO // EVIDENCE MANAGEMENT SYSTEM
-          </p>
-          <div className="mt-6 flex justify-center">
-            <div className="h-px w-32 bg-gradient-to-r from-transparent via-doj-gold/40 to-transparent"></div>
-          </div>
-        </div>
-
-        {/* Login Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          
-          <div className={`rounded-lg bg-slate-950/50 p-6 border ${error ? 'border-red-900/50' : 'border-slate-800'} ${shake ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}>
-            
-            <div className="flex items-center gap-3 mb-6">
-              <Terminal className="w-5 h-5 text-slate-500" />
-              <h3 className="text-sm font-mono text-slate-300 uppercase tracking-widest">
-                Authentication Required
-              </h3>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="clearance-code" className="sr-only">
-                  Clearance Code
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound className={`h-4 w-4 ${error ? 'text-red-500/70' : 'text-slate-500 group-focus-within:text-doj-gold/70'} transition-colors`} />
-                  </div>
-                  <input
-                    id="clearance-code"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    ref={inputRef}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (error) setError(false);
-                    }}
-                    className={`block w-full pl-10 pr-3 py-3 border font-mono text-sm tracking-widest rounded bg-slate-900/80 placeholder-slate-600 focus:outline-none focus:ring-1 focus:border-transparent transition-colors
-                      ${error 
-                        ? 'border-red-900/50 text-red-100 focus:ring-red-500/50' 
-                        : 'border-slate-700 text-slate-200 focus:ring-doj-gold/50'
-                      }`}
-                    placeholder="ENTER CLEARANCE CODE"
-                  />
-                </div>
-              </div>
-              
-              <div className="h-6 flex items-center justify-center">
-                {error ? (
-                  <p className="text-xs font-mono text-red-500 tracking-widest animate-pulse uppercase">
-                    Access Denied. Violation logged.
-                  </p>
-                ) : (
-                  <p className="text-[10px] font-mono text-slate-500 tracking-widest uppercase opacity-70">
-                    {attempts > 0 ? `${attempts} FAILED ATTEMPTS LOGGED` : 'AWAITING INPUT...'}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                className={`group relative w-full flex justify-center py-3 px-4 border text-sm font-mono font-bold rounded tracking-widest uppercase transition-all
-                  ${error 
-                    ? 'border-red-900/50 bg-red-950/20 text-red-500 hover:bg-red-900/40' 
-                    : 'border-doj-gold/50 bg-doj-gold/10 text-doj-gold hover:bg-doj-gold hover:text-slate-950 hover:shadow-[0_0_15px_rgba(234,179,8,0.3)]'
-                  }`}
-              >
-                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                  <Lock className={`h-4 w-4 ${error ? 'text-red-500/50' : 'text-doj-gold/50 group-hover:text-slate-950/50'} transition-colors`} aria-hidden="true" />
-                </span>
-                VERIFY CLEARANCE
-              </button>
-            </div>
-          </div>
-        </form>
-        
-        {/* Footer info */}
-        <div className="mt-6 text-center">
-          <p className="text-[9px] font-mono text-slate-600 tracking-widest">
-            ATTEMPTS ARE MONITORED. UNAUTHORIZED ACCESS PROHIBITED.
-          </p>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
+        try {
+            if (mode === 'register') {
+                if (password !== confirmPassword) {
+                    throw new Error('passwords-mismatch');
+                }
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: codename });
+            } else {
+                await signInWithEmailAndPassword(auth, email, password);
+            }
+        } catch (err) {
+            let errorMsg = "AUTHENTICATION FAILURE";
+            if (err.message === 'passwords-mismatch') errorMsg = "PASSWORDS DO NOT MATCH";
+            else if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') errorMsg = "AGENT NOT FOUND OR INVALID CREDENTIALS";
+            else if (err.code === 'auth/wrong-password') errorMsg = "INVALID CREDENTIALS";
+            else if (err.code === 'auth/too-many-requests') errorMsg = "ACCESS TEMPORARILY SUSPENDED";
+            else if (err.code === 'auth/email-already-in-use') errorMsg = "AGENT IDENTITY ALREADY REGISTERED";
+            else if (err.code === 'auth/weak-password') errorMsg = "INSUFFICIENT ENCRYPTION (WEAK PASSWORD)";
+            setError(errorMsg);
+        } finally {
+            setLoading(false);
         }
-      `}</style>
-    </div>
-  );
+    };
+
+    const toggleMode = () => {
+        setMode(mode === 'signin' ? 'register' : 'signin');
+        setError('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setCodename('');
+    };
+
+    return (
+        <div className="relative min-h-screen bg-[#0a0e1a] flex items-center justify-center font-mono overflow-hidden">
+            {/* Tactical background elements */}
+            <div className="absolute inset-0 scanlines pointer-events-none opacity-20" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900/50 via-[#0a0e1a] to-[#0a0e1a] pointer-events-none" />
+
+            <div className="relative z-10 w-full max-w-md p-8 border-2 border-doj-gold/30 bg-[#0a0e1a]/80 backdrop-blur-md shadow-2xl shadow-doj-gold/10 rounded-lg">
+                <div className="flex flex-col items-center mb-8">
+                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-doj-gold bg-[#0a0e1a] shadow-[0_0_20px_rgba(245,158,11,0.2)] mb-4">
+                        <Lock className="w-10 h-10 text-doj-gold" />
+                        <div className="absolute inset-0 rounded-full border border-doj-gold/50 animate-ping opacity-20" />
+                    </div>
+                    <h1 className="text-2xl font-bold tracking-widest text-doj-gold uppercase flex items-center gap-2">
+                        <Terminal className="w-6 h-6" />
+                        CLEARANCE REQUIRED
+                        <span className="w-3 h-6 bg-doj-gold animate-pulse inline-block ml-1" />
+                    </h1>
+                    <p className="text-xs tracking-[0.3em] text-slate-500 mt-2 uppercase">
+                        Department of Lorenzo
+                    </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="flex items-center gap-2 p-3 border border-red-500/50 bg-red-500/10 text-red-500 text-xs tracking-widest rounded">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            <p>{error}</p>
+                        </div>
+                    )}
+
+                    <div className="space-y-4">
+                        {mode === 'register' && (
+                            <div>
+                                <label className="block text-[10px] tracking-widest text-slate-500 uppercase mb-1">
+                                    Agent Codename
+                                </label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                    <input
+                                        type="text"
+                                        value={codename}
+                                        onChange={(e) => setCodename(e.target.value)}
+                                        className="w-full bg-black/50 border border-slate-700 text-[#86efac] pl-10 pr-4 py-3 rounded text-sm focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors placeholder:text-slate-700"
+                                        placeholder="CODENAME..."
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <div>
+                            <label className="block text-[10px] tracking-widest text-slate-500 uppercase mb-1">
+                                Authorized Email
+                            </label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full bg-black/50 border border-slate-700 text-[#86efac] px-4 py-3 rounded text-sm focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors placeholder:text-slate-700"
+                                placeholder="IDENTIFIER..."
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] tracking-widest text-slate-500 uppercase mb-1">
+                                Passcode
+                            </label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-black/50 border border-slate-700 text-[#86efac] px-4 py-3 rounded text-sm tracking-widest focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors placeholder:text-slate-700"
+                                placeholder="••••••••"
+                                required
+                            />
+                        </div>
+                        {mode === 'register' && (
+                            <div>
+                                <label className="block text-[10px] tracking-widest text-slate-500 uppercase mb-1">
+                                    Confirm Passcode
+                                </label>
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    className="w-full bg-black/50 border border-slate-700 text-[#86efac] px-4 py-3 rounded text-sm tracking-widest focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors placeholder:text-slate-700"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className={`w-full bg-doj-gold hover:bg-yellow-500 text-slate-950 font-bold py-3 rounded uppercase tracking-[0.2em] text-xs transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] active:scale-[0.98] ${loading ? 'opacity-70 cursor-wait' : ''}`}
+                    >
+                        {loading ? 'AUTHENTICATING...' : (mode === 'signin' ? 'AUTHORIZE ACCESS' : 'REQUEST CLEARANCE')}
+                    </button>
+                </form>
+
+                <div className="mt-8 pt-6 border-t border-slate-800 text-center">
+                    <button
+                        type="button"
+                        onClick={toggleMode}
+                        className="text-[10px] tracking-widest text-slate-500 hover:text-doj-gold transition-colors uppercase"
+                    >
+                        {mode === 'signin' ? '> REQUEST ACCESS (NEW AGENT)' : '> ALREADY CLEARED (SIGN IN)'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 }

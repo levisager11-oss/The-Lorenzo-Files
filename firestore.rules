@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Evidence files: anyone authenticated can read
+    match /evidenceFiles/{fileId} {
+      allow read: if request.auth != null;
+      // Only allow writes via client SDK for upload (no direct vote writes)
+      allow create: if request.auth != null;
+      // Disallow direct upvotes/downvotes field updates from client
+      allow update: if request.auth != null
+        && !("upvotes"  in request.resource.data.diff(resource.data).affectedKeys())
+        && !("downvotes" in request.resource.data.diff(resource.data).affectedKeys());
+      allow delete: if request.auth != null 
+        && resource.data.uploadedById == request.auth.uid;
+
+      // Voters sub-collection: each user owns only their own voter doc
+      match /voters/{uid} {
+        allow read:   if request.auth != null;
+        allow write:  if request.auth != null && request.auth.uid == uid;
+        allow delete: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}
