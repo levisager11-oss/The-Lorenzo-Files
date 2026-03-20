@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldAlert, Skull, X } from 'lucide-react';
 
@@ -6,7 +7,7 @@ export default function SecurityBreach({ onDismiss }) {
     const [countdown, setCountdown] = useState(10);
     const [terminalLines, setTerminalLines] = useState([]);
 
-    const hackerLines = [
+    const hackerLines = useMemo(() => [
         '> INTRUSION DETECTED ON PORT 443...',
         '> TRACING NETWORK ORIGIN...',
         '> FIREWALL BREACH: SECTOR 7-G',
@@ -17,7 +18,7 @@ export default function SecurityBreach({ onDismiss }) {
         '> ACTIVATING RUBBER DUCK PROTOCOL...',
         '> SHREDDING KARAOKE EVIDENCE...',
         '> SYSTEM LOCKDOWN IN PROGRESS...',
-    ];
+    ], []);
 
     // Countdown timer
     useEffect(() => {
@@ -38,7 +39,7 @@ export default function SecurityBreach({ onDismiss }) {
             }
         }, 800);
         return () => clearInterval(interval);
-    }, []);
+    }, [hackerLines]);
 
     return (
         <AnimatePresence>

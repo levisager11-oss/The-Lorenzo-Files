@@ -4,7 +4,7 @@ import { participantNames } from '../data/names';
 
 export default function UploadModal({ file, onClose, onConfirm }) {
     const [context, setContext] = useState('');
-    const [suspectNames, setSuspectNames] = useState([]);
+    const [selectedSuspects, setSelectedSuspects] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showNameList, setShowNameList] = useState(false);
     const inputRef = useRef(null);
@@ -30,8 +30,16 @@ export default function UploadModal({ file, onClose, onConfirm }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (suspectNames.length === 0) return;
-        onConfirm(context.trim() || 'No context provided.', suspectNames.join(', '));
+        if (selectedSuspects.length === 0) return;
+        onConfirm(context.trim() || 'No context provided.', selectedSuspects);
+    };
+
+    const toggleSuspect = (name) => {
+        setSelectedSuspects(prev => 
+            prev.includes(name) 
+                ? prev.filter(n => n !== name) 
+                : [...prev, name]
+        );
     };
 
     const filteredNames = participantNames.filter(name =>
@@ -84,29 +92,22 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                         <div className="relative">
                             <div
                                 onClick={() => setShowNameList(true)}
-                                className={`w-full bg-slate-800/50 border ${suspectNames.length > 0 ? 'border-doj-gold/40' : 'border-slate-700'} rounded-lg p-3 font-mono text-sm cursor-pointer flex flex-wrap items-center gap-2 transition-all hover:bg-slate-800/80 min-h-[46px]`}
+                                className={`w-full bg-slate-800/50 border ${selectedSuspects.length > 0 ? 'border-doj-gold/40' : 'border-slate-700'} rounded-lg p-3 font-mono text-sm cursor-pointer transition-all hover:bg-slate-800/80`}
                             >
-                                {suspectNames.length === 0 && (
-                                    <div className="flex items-center gap-3 w-full">
-                                        <User className="w-4 h-4 text-slate-500" />
-                                        <span className="text-slate-500">SELECT SUBJECTS...</span>
-                                    </div>
-                                )}
-                                {suspectNames.map(name => (
-                                    <span key={name} className="flex items-center gap-1 bg-doj-gold/20 text-doj-gold px-2 py-1 rounded text-xs border border-doj-gold/30">
-                                        {name}
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSuspectNames(prev => prev.filter(n => n !== name));
-                                            }}
-                                            className="hover:text-white ml-1"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </span>
-                                ))}
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    <User className={`w-4 h-4 ${selectedSuspects.length > 0 ? 'text-doj-gold' : 'text-slate-500'}`} />
+                                    {selectedSuspects.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {selectedSuspects.map(name => (
+                                                <span key={name} className="px-2 py-0.5 bg-doj-gold/10 border border-doj-gold/30 rounded text-[10px] text-doj-gold uppercase tracking-tighter">
+                                                    {name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <span className="text-slate-500">SELECT SUSPECTS...</span>
+                                    )}
+                                </div>
                             </div>
 
                             {showNameList && (
@@ -124,27 +125,18 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                                     </div>
                                     <div className="max-h-48 overflow-y-auto custom-scrollbar">
                                         {filteredNames.length > 0 ? (
-                                            filteredNames.map(name => {
-                                                const isSelected = suspectNames.includes(name);
-                                                return (
-                                                    <div
-                                                        key={name}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (isSelected) {
-                                                                setSuspectNames(prev => prev.filter(n => n !== name));
-                                                            } else {
-                                                                setSuspectNames(prev => [...prev, name]);
-                                                            }
-                                                            setSearchTerm('');
-                                                        }}
-                                                        className={`px-4 py-2.5 font-mono text-xs cursor-pointer hover:bg-slate-700/50 transition-colors flex items-center justify-between ${isSelected ? 'bg-doj-gold/10 text-doj-gold' : 'text-slate-300 hover:text-white'}`}
-                                                    >
-                                                        {name}
-                                                        {isSelected && <Check className="w-3 h-3" />}
-                                                    </div>
-                                                );
-                                            })
+                                            filteredNames.map(name => (
+                                                <div
+                                                    key={name}
+                                                    onClick={() => {
+                                                        toggleSuspect(name);
+                                                    }}
+                                                    className={`px-4 py-2.5 font-mono text-xs cursor-pointer hover:bg-slate-700/50 transition-colors flex items-center justify-between ${selectedSuspects.includes(name) ? 'bg-doj-gold/10 text-doj-gold' : 'text-slate-300 hover:text-white'}`}
+                                                >
+                                                    {name}
+                                                    {selectedSuspects.includes(name) && <Check className="w-3 h-3" />}
+                                                </div>
+                                            ))
                                         ) : (
                                             <div className="px-4 py-4 font-mono text-[10px] text-red-500/70 text-center uppercase tracking-widest">
                                                 NO CLEARANCE FOUND
@@ -188,9 +180,9 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                         </button>
                         <button
                             type="submit"
-                            disabled={suspectNames.length === 0 || !context.trim()}
+                            disabled={selectedSuspects.length === 0 || !context.trim()}
                             className={`font-mono text-xs font-bold px-6 py-2.5 rounded border transition-all tracking-widest uppercase shadow-lg select-none ${
-                                suspectNames.length === 0 || !context.trim()
+                                selectedSuspects.length === 0 || !context.trim()
                                     ? 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'
                                     : 'bg-doj-gold text-slate-950 border-doj-gold hover:bg-yellow-500 hover:border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)] active:scale-95'
                             }`}

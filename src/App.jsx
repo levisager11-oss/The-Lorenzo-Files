@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
-import { AlertTriangle, Database, FileText, Upload, Loader2 } from 'lucide-react';
-import { Analytics } from '@vercel/analytics/react';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
+import { AlertTriangle, Database, FileText, Upload, Loader2, ArrowUp } from 'lucide-react';
 import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
 import SecurityBreach from './components/SecurityBreach';
 import UploadModal from './components/UploadModal';
-import { evidenceFiles as initialSeedData } from './data/files';
 import { participantNames } from './data/names';
 import { db, storage } from './lib/firebase';
 import {
@@ -14,6 +14,7 @@ import {
   onSnapshot,
   doc,
   setDoc,
+  updateDoc,
   query,
   orderBy,
   deleteDoc
@@ -26,6 +27,7 @@ import {
 } from 'firebase/storage';
 
 import LoginScreen from './components/LoginScreen';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -39,6 +41,7 @@ export default function App() {
   const [securityLevel, setSecurityLevel] = useState(0);
   const [breached, setBreached] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('date');
 
   // Session / Ownership State
   const [sessionId] = useState(() => {
@@ -81,10 +84,19 @@ export default function App() {
         setFiles([]);
         setLoading(false);
       } else {
-        const evidenceData = snapshot.docs.map(doc => ({
-          docId: doc.id,
-          ...doc.data()
-        }));
+        const evidenceData = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
+          if (data.upvotes === undefined || data.downvotes === undefined) {
+            updateDoc(docSnap.ref, {
+              upvotes: data.upvotes || 0,
+              downvotes: data.downvotes || 0
+            }).catch(console.error);
+          }
+          return {
+            docId: docSnap.id,
+            ...data
+          };
+        });
         setFiles(evidenceData);
         setLoading(false);
       }
@@ -94,7 +106,7 @@ export default function App() {
   }, []);
 
   const filteredFiles = useMemo(() => {
-    let result = files;
+    let result = [...files];
     
     // Filter by search query
     if (searchQuery.trim()) {
@@ -105,13 +117,26 @@ export default function App() {
     // Filter by selected suspect
     if (selectedSuspect) {
       result = result.filter((f) => {
-        const name = f.suspectName || 'Lorenzo';
-        return name === selectedSuspect;
+        // Support both single suspectName (string) and multiple suspectNames (array)
+        const suspects = f.suspectNames || (f.suspectName ? [f.suspectName] : ['Lorenzo']);
+        return suspects.includes(selectedSuspect);
       });
+    }
+
+    // Sort files
+    if (sortBy === 'top') {
+      result.sort((a, b) => {
+        const scoreA = (a.upvotes || 0) - (a.downvotes || 0);
+        const scoreB = (b.upvotes || 0) - (b.downvotes || 0);
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return b.id - a.id; // fallback to date if scores are equal
+      });
+    } else {
+      result.sort((a, b) => b.id - a.id);
     }
     
     return result;
-  }, [searchQuery, selectedSuspect, files]);
+  }, [searchQuery, selectedSuspect, files, sortBy]);
 
   const handleRedactedClick = () => {
     const next = securityLevel + 1;
@@ -151,7 +176,7 @@ export default function App() {
     setShowUploadModal(false);
   };
 
-  const processFileUpload = async (contextText, suspectName) => {
+  const processFileUpload = async (contextText, suspectNames) => {
     if (!fileToUpload) return;
 
     setShowUploadModal(false);
@@ -184,10 +209,12 @@ export default function App() {
         size: sizeStr,
         status: "CLASSIFIED",
         redactedText: contextText, // Use user-provided context
-        suspectName: suspectName, // Use user-selected suspect
+        suspectNames: suspectNames, // Store array of suspect names
         downloadURL: downloadURL,
         uploadedById: sessionId,    // Track owner
-        storagePath: storagePath    // Facilitate deletion
+        storagePath: storagePath,   // Facilitate deletion
+        upvotes: 0,
+        downvotes: 0
       };
 
       await setDoc(doc(db, "evidenceFiles", newEvidence.id.toString()), newEvidence);
@@ -293,7 +320,20 @@ export default function App() {
               </div>
 
               {/* Name Filter selector */}
-              <div className="ml-4">
+              <div className="ml-4 flex items-center gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSortBy(prev => prev === 'top' ? 'date' : 'top')}
+                  className={`flex items-center gap-1 px-3 py-1.5 border rounded transition-colors duration-300 text-xs font-mono
+                    ${sortBy === 'top' 
+                      ? 'bg-doj-gold/20 border-doj-gold/50 text-doj-gold shadow-[0_0_10px_rgba(245,158,11,0.2)]' 
+                      : 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-300 hover:bg-slate-700'
+                    }`}
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                  TOP
+                </motion.button>
                 <select
                   value={selectedSuspect}
                   onChange={(e) => setSelectedSuspect(e.target.value)}
@@ -356,8 +396,9 @@ export default function App() {
           {/* Evidence Table */}
           <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
             {/* Table Header */}
-            <div className="grid grid-cols-[30px_1fr_100px_150px] sm:grid-cols-[40px_1fr_120px_90px_70px_120px_180px] lg:grid-cols-[40px_1fr_120px_100px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+            <div className="grid grid-cols-[30px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_90px_70px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_100px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
               <div>#</div>
+              <div className="text-center">Votes</div>
               <div>File Name</div>
               <div className="hidden sm:block">Suspect</div>
               <div className="hidden sm:block">Date</div>
@@ -408,7 +449,7 @@ export default function App() {
         <UploadModal
           file={fileToUpload}
           onClose={handleCancelUpload}
-          onConfirm={(context, suspectName) => processFileUpload(context, suspectName)}
+          onConfirm={(context, suspectNames) => processFileUpload(context, suspectNames)}
         />
       )}
 
