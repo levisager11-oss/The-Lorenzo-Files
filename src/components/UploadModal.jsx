@@ -4,7 +4,7 @@ import { participantNames } from '../data/names';
 
 export default function UploadModal({ file, onClose, onConfirm }) {
     const [context, setContext] = useState('');
-    const [suspectName, setSuspectName] = useState('');
+    const [selectedSuspects, setSelectedSuspects] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showNameList, setShowNameList] = useState(false);
     const inputRef = useRef(null);
@@ -30,8 +30,16 @@ export default function UploadModal({ file, onClose, onConfirm }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!suspectName) return;
-        onConfirm(context.trim() || 'No context provided.', suspectName);
+        if (selectedSuspects.length === 0) return;
+        onConfirm(context.trim() || 'No context provided.', selectedSuspects);
+    };
+
+    const toggleSuspect = (name) => {
+        setSelectedSuspects(prev => 
+            prev.includes(name) 
+                ? prev.filter(n => n !== name) 
+                : [...prev, name]
+        );
     };
 
     const filteredNames = participantNames.filter(name =>
@@ -84,15 +92,22 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                         <div className="relative">
                             <div
                                 onClick={() => setShowNameList(true)}
-                                className={`w-full bg-slate-800/50 border ${suspectName ? 'border-doj-gold/40' : 'border-slate-700'} rounded-lg p-3 font-mono text-sm cursor-pointer flex items-center justify-between transition-all hover:bg-slate-800/80`}
+                                className={`w-full bg-slate-800/50 border ${selectedSuspects.length > 0 ? 'border-doj-gold/40' : 'border-slate-700'} rounded-lg p-3 font-mono text-sm cursor-pointer transition-all hover:bg-slate-800/80`}
                             >
-                                <div className="flex items-center gap-3">
-                                    <User className={`w-4 h-4 ${suspectName ? 'text-doj-gold' : 'text-slate-500'}`} />
-                                    <span className={suspectName ? 'text-slate-100' : 'text-slate-500'}>
-                                        {suspectName || 'SELECT SUSPECT...'}
-                                    </span>
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    <User className={`w-4 h-4 ${selectedSuspects.length > 0 ? 'text-doj-gold' : 'text-slate-500'}`} />
+                                    {selectedSuspects.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {selectedSuspects.map(name => (
+                                                <span key={name} className="px-2 py-0.5 bg-doj-gold/10 border border-doj-gold/30 rounded text-[10px] text-doj-gold uppercase tracking-tighter">
+                                                    {name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <span className="text-slate-500">SELECT SUSPECTS...</span>
+                                    )}
                                 </div>
-                                {suspectName && <Check className="w-4 h-4 text-doj-gold" />}
                             </div>
 
                             {showNameList && (
@@ -114,14 +129,12 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                                                 <div
                                                     key={name}
                                                     onClick={() => {
-                                                        setSuspectName(name);
-                                                        setShowNameList(false);
-                                                        setSearchTerm('');
+                                                        toggleSuspect(name);
                                                     }}
-                                                    className={`px-4 py-2.5 font-mono text-xs cursor-pointer hover:bg-slate-700/50 transition-colors flex items-center justify-between ${suspectName === name ? 'bg-doj-gold/10 text-doj-gold' : 'text-slate-300 hover:text-white'}`}
+                                                    className={`px-4 py-2.5 font-mono text-xs cursor-pointer hover:bg-slate-700/50 transition-colors flex items-center justify-between ${selectedSuspects.includes(name) ? 'bg-doj-gold/10 text-doj-gold' : 'text-slate-300 hover:text-white'}`}
                                                 >
                                                     {name}
-                                                    {suspectName === name && <Check className="w-3 h-3" />}
+                                                    {selectedSuspects.includes(name) && <Check className="w-3 h-3" />}
                                                 </div>
                                             ))
                                         ) : (
@@ -167,9 +180,9 @@ export default function UploadModal({ file, onClose, onConfirm }) {
                         </button>
                         <button
                             type="submit"
-                            disabled={!suspectName || !context.trim()}
+                            disabled={selectedSuspects.length === 0 || !context.trim()}
                             className={`font-mono text-xs font-bold px-6 py-2.5 rounded border transition-all tracking-widest uppercase shadow-lg select-none ${
-                                !suspectName || !context.trim()
+                                selectedSuspects.length === 0 || !context.trim()
                                     ? 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'
                                     : 'bg-doj-gold text-slate-950 border-doj-gold hover:bg-yellow-500 hover:border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)] active:scale-95'
                             }`}

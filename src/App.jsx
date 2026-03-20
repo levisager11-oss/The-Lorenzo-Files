@@ -95,8 +95,9 @@ export default function App() {
     // Filter by selected suspect
     if (selectedSuspect) {
       result = result.filter((f) => {
-        const name = f.suspectName || 'Lorenzo';
-        return name === selectedSuspect;
+        // Support both single suspectName (string) and multiple suspectNames (array)
+        const suspects = f.suspectNames || (f.suspectName ? [f.suspectName] : ['Lorenzo']);
+        return suspects.includes(selectedSuspect);
       });
     }
     
@@ -141,7 +142,7 @@ export default function App() {
     setShowUploadModal(false);
   };
 
-  const processFileUpload = async (contextText, suspectName) => {
+  const processFileUpload = async (contextText, suspectNames) => {
     if (!fileToUpload) return;
 
     setShowUploadModal(false);
@@ -174,7 +175,7 @@ export default function App() {
         size: sizeStr,
         status: "CLASSIFIED",
         redactedText: contextText, // Use user-provided context
-        suspectName: suspectName, // Use user-selected suspect
+        suspectNames: suspectNames, // Store array of suspect names
         downloadURL: downloadURL,
         uploadedById: sessionId,    // Track owner
         storagePath: storagePath    // Facilitate deletion
@@ -397,7 +398,7 @@ export default function App() {
         <UploadModal
           file={fileToUpload}
           onClose={handleCancelUpload}
-          onConfirm={(context, suspectName) => processFileUpload(context, suspectName)}
+          onConfirm={(context, suspectNames) => processFileUpload(context, suspectNames)}
         />
       )}
 

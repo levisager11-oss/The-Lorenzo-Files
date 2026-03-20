@@ -88,8 +88,8 @@ export default function FileRow({ file, index, onRedactedClick, sessionId, onDel
 
             {/* Suspect */}
             <div className="hidden sm:flex items-center text-xs font-mono text-slate-400 min-w-0">
-                <span className="truncate block w-full" title={file.suspectName || 'LEGACY CLEARANCE'}>
-                    {file.suspectName || 'LORENZO'}
+                <span className="truncate block w-full" title={file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}>
+                    {file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}
                 </span>
             </div>
 
