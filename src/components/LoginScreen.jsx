@@ -9,6 +9,7 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [codename, setCodename] = useState('');
+    const [sitePassword, setSitePassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -19,6 +20,9 @@ export default function LoginScreen() {
 
         try {
             if (mode === 'register') {
+                if (sitePassword !== import.meta.env.VITE_SITE_PASSWORD) {
+                    throw new Error('invalid-site-password');
+                }
                 if (password !== confirmPassword) {
                     throw new Error('passwords-mismatch');
                 }
@@ -30,6 +34,7 @@ export default function LoginScreen() {
         } catch (err) {
             let errorMsg = "AUTHENTICATION FAILURE";
             if (err.message === 'passwords-mismatch') errorMsg = "PASSWORDS DO NOT MATCH";
+            else if (err.message === 'invalid-site-password') errorMsg = "INVALID UNIVERSAL PASSWORD";
             else if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') errorMsg = "AGENT NOT FOUND OR INVALID CREDENTIALS";
             else if (err.code === 'auth/wrong-password') errorMsg = "INVALID CREDENTIALS";
             else if (err.code === 'auth/too-many-requests') errorMsg = "ACCESS TEMPORARILY SUSPENDED";
@@ -48,6 +53,7 @@ export default function LoginScreen() {
         setPassword('');
         setConfirmPassword('');
         setCodename('');
+        setSitePassword('');
     };
 
     return (
@@ -126,19 +132,37 @@ export default function LoginScreen() {
                             />
                         </div>
                         {mode === 'register' && (
-                            <div>
-                                <label className="block text-[10px] tracking-widest text-slate-500 uppercase mb-1">
-                                    Confirm Passcode
-                                </label>
-                                <input
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full bg-black/50 border border-slate-700 text-[#86efac] px-4 py-3 rounded text-sm tracking-widest focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors placeholder:text-slate-700"
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </div>
+                            <>
+                                <div>
+                                    <label className="block text-[10px] tracking-widest text-slate-500 uppercase mb-1">
+                                        Confirm Passcode
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full bg-black/50 border border-slate-700 text-[#86efac] px-4 py-3 rounded text-sm tracking-widest focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors placeholder:text-slate-700"
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] tracking-widest text-slate-500 uppercase mb-1">
+                                        Universal Password
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                        <input
+                                            type="password"
+                                            value={sitePassword}
+                                            onChange={(e) => setSitePassword(e.target.value)}
+                                            className="w-full bg-black/50 border border-slate-700 text-[#86efac] pl-10 pr-4 py-3 rounded text-sm tracking-widest focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors placeholder:text-slate-700"
+                                            placeholder="••••••••"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
 
