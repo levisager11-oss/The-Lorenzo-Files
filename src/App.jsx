@@ -8,7 +8,7 @@ import FileRow from './components/FileRow';
 import SecurityBreach from './components/SecurityBreach';
 import UploadModal from './components/UploadModal';
 import { participantNames } from './data/names';
-import { db, storage } from './lib/firebase';
+import { db, storage, auth, onAuthStateChanged } from './lib/firebase';
 import {
   collection,
   onSnapshot,
@@ -30,9 +30,8 @@ import LoginScreen from './components/LoginScreen';
 import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('lorenzo_clearance') === 'GRANTED';
-  });
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [files, setFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,20 +42,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('date');
 
-  // Session / Ownership State
-  const [sessionId] = useState(() => {
-    const saved = localStorage.getItem('lorenzo_session_id');
-    if (saved) return saved;
-    const newId = 'suspect_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('lorenzo_session_id', newId);
-    return newId;
-  });
-
-  const handleLoginSuccess = () => {
-    sessionStorage.setItem('lorenzo_clearance', 'GRANTED');
-    setIsAuthenticated(true);
-  };
-
   // Upload State
   const [uploading, setUploading] = useState(false);
   const [fileToUpload, setFileToUpload] = useState(null);
@@ -65,7 +50,18 @@ export default function App() {
   // Purge State
   const [fileToPurge, setFileToPurge] = useState(null);
 
+  // Auth Listener
   useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!user) return; // Don't fetch files if not authenticated
+
     // Listen to Firebase evidenceFiles collection
     const filesCollection = collection(db, "evidenceFiles");
     const q = query(filesCollection, orderBy("id", "desc"));
@@ -103,7 +99,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const filteredFiles = useMemo(() => {
     let result = [...files];
@@ -177,7 +173,7 @@ export default function App() {
   };
 
   const processFileUpload = async (contextText, suspectNames) => {
-    if (!fileToUpload) return;
+    if (!fileToUpload || !user) return;
 
     setShowUploadModal(false);
     setUploading(true);
@@ -211,7 +207,7 @@ export default function App() {
         redactedText: contextText, // Use user-provided context
         suspectNames: suspectNames, // Store array of suspect names
         downloadURL: downloadURL,
-        uploadedById: sessionId,    // Track owner
+        uploadedById: user.uid,     // Track owner via Firebase Auth
         storagePath: storagePath,   // Facilitate deletion
         upvotes: 0,
         downvotes: 0
@@ -256,13 +252,26 @@ export default function App() {
     }
   };
 
-  if (!isAuthenticated) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  if (authLoading) {
+    return (
+      <div className="relative min-h-screen bg-[#0a0e1a] font-sans flex items-center justify-center">
+        <div className="grain-overlay" />
+        <div className="scanlines" />
+        <div className="flex flex-col items-center gap-4 text-slate-500 font-mono">
+          <Loader2 className="w-8 h-8 animate-spin text-doj-gold" />
+          <p className="tracking-widest">AUTHENTICATING...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
   }
 
   if (loading) {
     return (
-      <div className="relative min-h-screen bg-slate-900 font-sans flex items-center justify-center">
+      <div className="relative min-h-screen bg-[#0a0e1a] font-sans flex items-center justify-center">
         <div className="grain-overlay" />
         <div className="scanlines" />
         <div className="flex flex-col items-center gap-4 text-slate-500 font-mono">
@@ -415,7 +424,7 @@ export default function App() {
                   file={file}
                   index={index}
                   onRedactedClick={handleRedactedClick}
-                  sessionId={sessionId}
+                  user={user}
                   onDelete={handleDeleteFile}
                   isDeleting={deletingId === (file.docId || file.id.toString())}
                 />
