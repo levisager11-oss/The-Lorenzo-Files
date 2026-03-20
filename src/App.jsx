@@ -405,13 +405,15 @@ export default function App() {
           {/* Evidence Table */}
           <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
             {/* Table Header */}
-            <div className="grid grid-cols-[30px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_90px_70px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_100px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+            <div className="grid grid-cols-[30px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
               <div>#</div>
               <div className="text-center">Votes</div>
               <div>File Name</div>
               <div className="hidden sm:block">Suspect</div>
-              <div className="hidden sm:block">Date</div>
-              <div className="hidden sm:block">Size</div>
+              <div className="hidden sm:flex flex-col gap-0.5">
+                <span>Date</span>
+                <span>Size</span>
+              </div>
               <div className="text-center">Status</div>
               <div className="text-right sm:pr-2">Intel</div>
             </div>
