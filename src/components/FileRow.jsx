@@ -105,7 +105,7 @@ export default function FileRow({ file, index, onRedactedClick, sessionId, onDel
 
             {/* Date */}
             <div className="hidden sm:block text-xs font-mono text-slate-500 whitespace-nowrap">
-                {file.date}
+                {file.date?.split(/[T ]/)[0]}
             </div>
 
             {/* Size */}
