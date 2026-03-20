@@ -27,6 +27,7 @@ import {
 } from 'firebase/storage';
 
 import LoginScreen from './components/LoginScreen';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
