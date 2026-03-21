@@ -5,7 +5,9 @@ import { AlertTriangle, Database, FileText, Upload, Loader2, ArrowUp } from 'luc
 import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
+import MobileFileCard from './components/MobileFileCard';
 import SecurityBreach from './components/SecurityBreach';
+import useIsMobile from './hooks/useIsMobile';
 import UploadModal from './components/UploadModal';
 import { participantNames } from './data/names';
 import { db, storage, auth, onAuthStateChanged } from './lib/firebase';
@@ -49,6 +51,8 @@ export default function App() {
   
   // Purge State
   const [fileToPurge, setFileToPurge] = useState(null);
+
+  const isMobile = useIsMobile();
 
   // Auth Listener
   useEffect(() => {
@@ -317,119 +321,157 @@ export default function App() {
           </div>
 
           {/* Stats Bar */}
-          <div className="flex items-center justify-between mb-4 px-2">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
-                <Database className="w-3.5 h-3.5" />
-                <span>{files.length} FILES IN ARCHIVE</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
-                <FileText className="w-3.5 h-3.5" />
-                <span>{filteredFiles.length} SHOWING</span>
-              </div>
-
-              {/* Name Filter selector */}
-              <div className="ml-4 flex items-center gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSortBy(prev => prev === 'top' ? 'date' : 'top')}
-                  className={`flex items-center gap-1 px-3 py-1.5 border rounded transition-colors duration-300 text-xs font-mono
-                    ${sortBy === 'top' 
-                      ? 'bg-doj-gold/20 border-doj-gold/50 text-doj-gold shadow-[0_0_10px_rgba(245,158,11,0.2)]' 
-                      : 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-300 hover:bg-slate-700'
-                    }`}
-                >
-                  <ArrowUp className="w-3.5 h-3.5" />
-                  TOP
-                </motion.button>
-                <select
-                  value={selectedSuspect}
-                  onChange={(e) => setSelectedSuspect(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded text-xs font-mono text-slate-300 focus:outline-none focus:border-doj-gold/50 cursor-pointer appearance-none transition-colors"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundPosition: 'right 0.5rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1rem',
-                    paddingRight: '2rem'
-                  }}
-                >
-                  <option value="">ALL SUSPECTS</option>
-                  {participantNames.map(name => (
-                    <option key={name} value={name}>{name.toUpperCase()}</option>
-                  ))}
-                </select>
+          <div className={`flex ${isMobile ? 'flex-col gap-4' : 'items-center justify-between'} mb-4 px-2`}>
+            <div className={`flex ${isMobile ? 'flex-col gap-4' : 'items-center gap-4'}`}>
+              <div className="flex items-center gap-4 justify-between w-full">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+                    <Database className="w-3.5 h-3.5" />
+                    <span>{files.length} FILES{!isMobile && ' IN ARCHIVE'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>{filteredFiles.length} SHOWING</span>
+                  </div>
+                </div>
+                {isMobile && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-slate-600">SEC:</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3].map((level) => (
+                        <div
+                          key={level}
+                          className={`w-2.5 h-2.5 rounded-sm transition-colors duration-300 ${securityLevel >= level
+                            ? 'bg-red-500 shadow-sm shadow-red-500/50'
+                            : 'bg-slate-700'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Upload Button */}
-              <div className="ml-2">
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  disabled={uploading || showUploadModal}
-                />
-                <label
-                  htmlFor="file-upload"
-                  className={`flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded transition-colors duration-200 text-xs font-mono text-slate-300
-                    ${(uploading || showUploadModal) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700 cursor-pointer'}
-                  `}
-                >
-                  {uploading ? (
-                    <Loader2 className="w-3.5 h-3.5 text-doj-gold animate-spin" />
-                  ) : (
-                    <Upload className="w-3.5 h-3.5 text-doj-gold" />
-                  )}
-                  <span>{uploading ? 'UPLOADING...' : 'UPLOAD U.R.D.'}</span>
-                </label>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-slate-600">SECURITY LEVEL:</span>
-              <div className="flex gap-1">
-                {[1, 2, 3].map((level) => (
-                  <div
-                    key={level}
-                    className={`w-2.5 h-2.5 rounded-sm transition-colors duration-300 ${securityLevel >= level
-                      ? 'bg-red-500 shadow-sm shadow-red-500/50'
-                      : 'bg-slate-700'
+              {/* Name Filter selector & Upload */}
+              <div className={`flex items-center gap-2 ${isMobile ? 'w-full justify-between' : 'ml-4'}`}>
+                <div className="flex items-center gap-2 flex-1">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSortBy(prev => prev === 'top' ? 'date' : 'top')}
+                    className={`flex items-center justify-center gap-1 px-3 py-1.5 border rounded transition-colors duration-300 text-xs font-mono
+                      ${sortBy === 'top'
+                        ? 'bg-doj-gold/20 border-doj-gold/50 text-doj-gold shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                        : 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-300 hover:bg-slate-700'
                       }`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                    <span className={isMobile ? 'hidden sm:inline' : ''}>TOP</span>
+                  </motion.button>
+                  <select
+                    value={selectedSuspect}
+                    onChange={(e) => setSelectedSuspect(e.target.value)}
+                    className="flex-1 min-w-0 px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded text-xs font-mono text-slate-300 focus:outline-none focus:border-doj-gold/50 cursor-pointer appearance-none transition-colors"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundPosition: 'right 0.5rem center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '1rem',
+                      paddingRight: '2rem'
+                    }}
+                  >
+                    <option value="">ALL SUSPECTS</option>
+                    {participantNames.map(name => (
+                      <option key={name} value={name}>{name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Upload Button */}
+                <div className={isMobile ? 'shrink-0' : 'ml-2'}>
+                  <input
+                    type="file"
+                    id="file-upload"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    disabled={uploading || showUploadModal}
                   />
-                ))}
+                  <label
+                    htmlFor="file-upload"
+                    className={`flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded transition-colors duration-200 text-xs font-mono text-slate-300
+                      ${(uploading || showUploadModal) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700 cursor-pointer'}
+                    `}
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-3.5 h-3.5 text-doj-gold animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5 text-doj-gold" />
+                    )}
+                    <span className={isMobile ? 'hidden sm:inline' : ''}>{uploading ? 'UPLOADING...' : 'UPLOAD U.R.D.'}</span>
+                  </label>
+                </div>
               </div>
             </div>
+            {!isMobile && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-slate-600">SECURITY LEVEL:</span>
+                <div className="flex gap-1">
+                  {[1, 2, 3].map((level) => (
+                    <div
+                      key={level}
+                      className={`w-2.5 h-2.5 rounded-sm transition-colors duration-300 ${securityLevel >= level
+                        ? 'bg-red-500 shadow-sm shadow-red-500/50'
+                        : 'bg-slate-700'
+                        }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Evidence Table */}
+          {/* Evidence Table / Cards */}
           <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
             {/* Table Header */}
-            <div className="grid grid-cols-[30px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
-              <div>#</div>
-              <div className="text-center">Votes</div>
-              <div>File Name</div>
-              <div className="hidden sm:block">Suspect</div>
-              <div className="hidden sm:flex flex-col gap-0.5">
-                <span>Date</span>
-                <span>Size</span>
+            {!isMobile && (
+              <div className="grid grid-cols-[30px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+                <div>#</div>
+                <div className="text-center">Votes</div>
+                <div>File Name</div>
+                <div className="hidden sm:block">Suspect</div>
+                <div className="hidden sm:flex flex-col gap-0.5">
+                  <span>Date</span>
+                  <span>Size</span>
+                </div>
+                <div className="text-center">Status</div>
+                <div className="text-right sm:pr-2">Intel</div>
               </div>
-              <div className="text-center">Status</div>
-              <div className="text-right sm:pr-2">Intel</div>
-            </div>
+            )}
 
-            {/* File Rows */}
+            {/* File Rows / Cards */}
             {filteredFiles.length > 0 ? (
               filteredFiles.map((file, index) => (
-                <FileRow
-                  key={file.id}
-                  file={file}
-                  index={index}
-                  onRedactedClick={handleRedactedClick}
-                  user={user}
-                  onDelete={handleDeleteFile}
-                  isDeleting={deletingId === (file.docId || file.id.toString())}
-                />
+                isMobile ? (
+                  <MobileFileCard
+                    key={file.id}
+                    file={file}
+                    index={index}
+                    onRedactedClick={handleRedactedClick}
+                    user={user}
+                    onDelete={handleDeleteFile}
+                    isDeleting={deletingId === (file.docId || file.id.toString())}
+                  />
+                ) : (
+                  <FileRow
+                    key={file.id}
+                    file={file}
+                    index={index}
+                    onRedactedClick={handleRedactedClick}
+                    user={user}
+                    onDelete={handleDeleteFile}
+                    isDeleting={deletingId === (file.docId || file.id.toString())}
+                  />
+                )
               ))
             ) : (
               <div className="py-16 text-center">
