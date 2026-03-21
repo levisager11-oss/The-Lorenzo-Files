@@ -49,7 +49,7 @@ export default function FileRow({ file, index, onRedactedClick, user, onDelete, 
 
     return (
         <div
-            className={`file-row grid grid-cols-[40px_60px_1fr_120px_90px_70px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_100px_80px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 border-b border-slate-800/60 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+            className={`file-row grid grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 border-b border-slate-800/60 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
             onDoubleClick={(e) => {
                 if (isDeleting) return;
                 handleDoubleClick(e);
@@ -99,14 +99,10 @@ export default function FileRow({ file, index, onRedactedClick, user, onDelete, 
                 </span>
             </div>
 
-            {/* Date */}
-            <div className="hidden sm:block text-xs font-mono text-slate-500 whitespace-nowrap">
-                {file.date}
-            </div>
-
-            {/* Size */}
-            <div className="hidden sm:block text-xs font-mono text-slate-500 whitespace-nowrap">
-                {file.size}
+            {/* Date / Size */}
+            <div className="hidden sm:flex flex-col gap-0.5 text-xs font-mono text-slate-500 whitespace-nowrap">
+                <span>{file.date}</span>
+                <span className="text-slate-500">{file.size}</span>
             </div>
 
             {/* Status Badge */}
