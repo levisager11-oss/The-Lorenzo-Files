@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Terminal, Lock, AlertTriangle, User } from 'lucide-react';
 import { auth, googleProvider } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut, signInWithPopup } from 'firebase/auth';
 
 export default function LoginScreen() {
     const [mode, setMode] = useState('signin'); // 'signin' | 'register'
@@ -16,27 +16,10 @@ export default function LoginScreen() {
     const [googlePendingStep, setGooglePendingStep] = useState(false);
     const [googleSitePassword, setGoogleSitePassword] = useState('');
 
-    const handleGoogleSignIn = async () => {
+    const handleGoogleSignIn = () => {
         setError('');
         setInfo('');
-        setLoading(true);
-
-        try {
-            const result = await signInWithPopup(auth, googleProvider);
-            const additionalInfo = getAdditionalUserInfo(result);
-            if (additionalInfo?.isNewUser) {
-                await signOut(auth);
-                setGooglePendingStep(true);
-            }
-        } catch (err) {
-            let errorMsg = "AUTHENTICATION FAILURE";
-            if (err.code === 'auth/popup-closed-by-user') errorMsg = "AUTHORIZATION ABORTED";
-            else if (err.code === 'auth/popup-blocked') errorMsg = "POPUP BLOCKED BY BROWSER";
-            else if (err.code === 'auth/account-exists-with-different-credential') errorMsg = "ACCOUNT EXISTS WITH DIFFERENT CREDENTIALS";
-            setError(errorMsg);
-        } finally {
-            setLoading(false);
-        }
+        setGooglePendingStep(true);
     };
 
     const handleGooglePasswordSubmit = async (e) => {
@@ -138,7 +121,7 @@ export default function LoginScreen() {
                     <form onSubmit={handleGooglePasswordSubmit} className="space-y-6">
                         <div className="flex items-center gap-2 p-3 border border-doj-gold/50 bg-doj-gold/10 text-doj-gold text-xs tracking-widest rounded">
                             <Terminal className="w-4 h-4 shrink-0" />
-                            <p>GOOGLE IDENTITY VERIFIED. ENTER UNIVERSAL PASSWORD TO COMPLETE AUTHORIZATION.</p>
+                            <p>ENTER UNIVERSAL PASSWORD TO AUTHORIZE WITH GOOGLE.</p>
                         </div>
 
                         {error && (
