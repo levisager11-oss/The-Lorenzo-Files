@@ -1,17 +1,25 @@
 import { useState } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
+import useIsMobile from '../hooks/useIsMobile';
 
 export default function RedactedBox({ text, onRedactedClick }) {
     const [isHovered, setIsHovered] = useState(false);
+    const [isClicked, setIsClicked] = useState(false);
+    const isMobile = useIsMobile();
+
+    const isRevealed = isMobile ? isClicked : isHovered;
 
     return (
         <motion.div
             className="relative inline-flex cursor-pointer select-none max-w-full"
-            onHoverStart={() => setIsHovered(true)}
-            onHoverEnd={() => setIsHovered(false)}
+            onHoverStart={() => { if (!isMobile) setIsHovered(true); }}
+            onHoverEnd={() => { if (!isMobile) setIsHovered(false); }}
             onClick={(e) => {
                 e.stopPropagation();
+                if (isMobile) {
+                    setIsClicked(!isClicked);
+                }
                 onRedactedClick?.();
             }}
             whileTap={{ scale: 0.97 }}
@@ -21,7 +29,7 @@ export default function RedactedBox({ text, onRedactedClick }) {
                 <motion.div
                     className="absolute inset-0 bg-black rounded"
                     animate={{
-                        opacity: isHovered ? 0 : 1,
+                        opacity: isRevealed ? 0 : 1,
                     }}
                     transition={{ duration: 0.4, ease: 'easeInOut' }}
                 />
@@ -32,8 +40,8 @@ export default function RedactedBox({ text, onRedactedClick }) {
                         className="relative z-10 w-full px-1 box-border"
                         initial={{ opacity: 0, filter: 'blur(4px)' }}
                         animate={{
-                            opacity: isHovered ? 1 : 0,
-                            filter: isHovered ? 'blur(0px)' : 'blur(4px)',
+                            opacity: isRevealed ? 1 : 0,
+                            filter: isRevealed ? 'blur(0px)' : 'blur(4px)',
                         }}
                         transition={{ duration: 0.3 }}
                     >
@@ -49,7 +57,7 @@ export default function RedactedBox({ text, onRedactedClick }) {
                 {/* Redacted label on black bar */}
                 <motion.span
                     className="absolute inset-0 flex items-center justify-center text-[10px] font-mono text-slate-600 tracking-widest uppercase pointer-events-none"
-                    animate={{ opacity: isHovered ? 0 : 1 }}
+                    animate={{ opacity: isRevealed ? 0 : 1 }}
                     transition={{ duration: 0.2 }}
                 >
                     [REDACTED]
