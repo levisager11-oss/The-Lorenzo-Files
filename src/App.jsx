@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { AlertTriangle, Database, FileText, Upload, Loader2, ArrowUp } from 'lucide-react';
+import { AlertTriangle, Database, FileText, Upload, Loader2 } from 'lucide-react';
 import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
@@ -31,6 +31,18 @@ import {
 import LoginScreen from './components/LoginScreen';
 import { Analytics } from '@vercel/analytics/react';
 
+// Helper to convert stored size values to bytes for sorting
+function parseSize(file) {
+  if (file.sizeInBytes != null) return file.sizeInBytes;
+  const str = String(file.size || '').trim().toUpperCase();
+  const num = parseFloat(str);
+  if (isNaN(num)) return 0;
+  if (str.includes('GB')) return num * 1024 * 1024 * 1024;
+  if (str.includes('MB')) return num * 1024 * 1024;
+  if (str.includes('KB')) return num * 1024;
+  return num; // bytes (handles "B" suffix or bare numbers)
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -42,7 +54,7 @@ export default function App() {
   const [securityLevel, setSecurityLevel] = useState(0);
   const [breached, setBreached] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('date');
+  const [sortBy, setSortBy] = useState('date-desc');
 
   // Upload State
   const [uploading, setUploading] = useState(false);
@@ -124,14 +136,28 @@ export default function App() {
     }
 
     // Sort files
-    if (sortBy === 'top') {
+    if (sortBy === 'votes-desc') {
       result.sort((a, b) => {
         const scoreA = (a.upvotes || 0) - (a.downvotes || 0);
         const scoreB = (b.upvotes || 0) - (b.downvotes || 0);
         if (scoreB !== scoreA) return scoreB - scoreA;
-        return b.id - a.id; // fallback to date if scores are equal
+        return b.id - a.id;
       });
+    } else if (sortBy === 'votes-asc') {
+      result.sort((a, b) => {
+        const scoreA = (a.upvotes || 0) - (a.downvotes || 0);
+        const scoreB = (b.upvotes || 0) - (b.downvotes || 0);
+        if (scoreA !== scoreB) return scoreA - scoreB;
+        return a.id - b.id;
+      });
+    } else if (sortBy === 'size-desc') {
+      result.sort((a, b) => parseSize(b) - parseSize(a) || b.id - a.id);
+    } else if (sortBy === 'size-asc') {
+      result.sort((a, b) => parseSize(a) - parseSize(b) || a.id - b.id);
+    } else if (sortBy === 'date-asc') {
+      result.sort((a, b) => a.id - b.id);
     } else {
+      // date-desc (default)
       result.sort((a, b) => b.id - a.id);
     }
     
@@ -207,6 +233,7 @@ export default function App() {
         name: fileToUpload.name,
         date: today,
         size: sizeStr,
+        sizeInBytes,
         status: "CLASSIFIED",
         redactedText: contextText, // Use user-provided context
         suspectNames: suspectNames, // Store array of suspect names
@@ -355,19 +382,26 @@ export default function App() {
               {/* Name Filter selector & Upload */}
               <div className={`flex items-center gap-2 ${isMobile ? 'w-full justify-between' : 'ml-4'}`}>
                 <div className="flex items-center gap-2 flex-1">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSortBy(prev => prev === 'top' ? 'date' : 'top')}
-                    className={`flex items-center justify-center gap-1 px-3 py-1.5 border rounded transition-colors duration-300 text-xs font-mono
-                      ${sortBy === 'top'
-                        ? 'bg-doj-gold/20 border-doj-gold/50 text-doj-gold shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                        : 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-300 hover:bg-slate-700'
-                      }`}
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded text-xs font-mono text-slate-300 focus:outline-none focus:border-doj-gold/50 cursor-pointer appearance-none transition-colors"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundPosition: 'right 0.5rem center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '1rem',
+                      paddingRight: '2rem'
+                    }}
+                    title="Sort files"
                   >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                    <span className={isMobile ? 'hidden sm:inline' : ''}>TOP</span>
-                  </motion.button>
+                    <option value="date-desc">NEWEST</option>
+                    <option value="date-asc">OLDEST</option>
+                    <option value="votes-desc">MOST UPVOTES</option>
+                    <option value="votes-asc">LEAST UPVOTES</option>
+                    <option value="size-desc">BIGGEST FILE</option>
+                    <option value="size-asc">SMALLEST FILE</option>
+                  </select>
                   <select
                     value={selectedSuspect}
                     onChange={(e) => setSelectedSuspect(e.target.value)}
