@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Terminal, Lock, AlertTriangle, User } from 'lucide-react';
 import { auth } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
 
 export default function LoginScreen() {
     const [mode, setMode] = useState('signin'); // 'signin' | 'register'
@@ -11,11 +11,13 @@ export default function LoginScreen() {
     const [codename, setCodename] = useState('');
     const [sitePassword, setSitePassword] = useState('');
     const [error, setError] = useState('');
+    const [info, setInfo] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setInfo('');
         setLoading(true);
 
         try {
@@ -28,6 +30,11 @@ export default function LoginScreen() {
                 }
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 await updateProfile(userCredential.user, { displayName: codename });
+                await sendEmailVerification(userCredential.user);
+                await signOut(auth);
+                setInfo('VERIFICATION LINK TRANSMITTED. CHECK YOUR EMAIL TO CONFIRM YOUR IDENTITY BEFORE SIGNING IN.');
+                setLoading(false);
+                return;
             } else {
                 await signInWithEmailAndPassword(auth, email, password);
             }
@@ -49,6 +56,7 @@ export default function LoginScreen() {
     const toggleMode = () => {
         setMode(mode === 'signin' ? 'register' : 'signin');
         setError('');
+        setInfo('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
@@ -83,6 +91,13 @@ export default function LoginScreen() {
                         <div className="flex items-center gap-2 p-3 border border-red-500/50 bg-red-500/10 text-red-500 text-xs tracking-widest rounded">
                             <AlertTriangle className="w-4 h-4 shrink-0" />
                             <p>{error}</p>
+                        </div>
+                    )}
+
+                    {info && (
+                        <div className="flex items-center gap-2 p-3 border border-doj-gold/50 bg-doj-gold/10 text-doj-gold text-xs tracking-widest rounded">
+                            <Terminal className="w-4 h-4 shrink-0" />
+                            <p>{info}</p>
                         </div>
                     )}
 

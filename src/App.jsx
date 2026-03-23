@@ -29,6 +29,7 @@ import {
 } from 'firebase/storage';
 
 import LoginScreen from './components/LoginScreen';
+import EmailVerificationGate from './components/EmailVerificationGate';
 import { Analytics } from '@vercel/analytics/react';
 
 // Helper to convert stored size values to bytes for sorting
@@ -298,6 +299,10 @@ export default function App() {
 
   if (!user) {
     return <LoginScreen />;
+  }
+
+  if (!user.emailVerified) {
+    return <EmailVerificationGate user={user} setUser={setUser} />;
   }
 
   if (loading) {
