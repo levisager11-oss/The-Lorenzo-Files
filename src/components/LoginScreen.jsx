@@ -13,14 +13,27 @@ export default function LoginScreen() {
     const [error, setError] = useState('');
     const [info, setInfo] = useState('');
     const [loading, setLoading] = useState(false);
+    const [googlePendingStep, setGooglePendingStep] = useState(false);
+    const [googleSitePassword, setGoogleSitePassword] = useState('');
 
-    const handleGoogleSignIn = async () => {
+    const handleGoogleSignIn = () => {
         setError('');
         setInfo('');
-        setLoading(true);
+        setGooglePendingStep(true);
+    };
 
+    const handleGooglePasswordSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        if (googleSitePassword !== import.meta.env.VITE_SITE_PASSWORD) {
+            setError('INVALID UNIVERSAL PASSWORD');
+            return;
+        }
+        setLoading(true);
         try {
             await signInWithPopup(auth, googleProvider);
+            setGooglePendingStep(false);
+            setGoogleSitePassword('');
         } catch (err) {
             let errorMsg = "AUTHENTICATION FAILURE";
             if (err.code === 'auth/popup-closed-by-user') errorMsg = "AUTHORIZATION ABORTED";
@@ -103,6 +116,59 @@ export default function LoginScreen() {
                         Department of Lorenzo
                     </p>
                 </div>
+
+                {googlePendingStep ? (
+                    <form onSubmit={handleGooglePasswordSubmit} className="space-y-6">
+                        <div className="flex items-center gap-2 p-3 border border-doj-gold/50 bg-doj-gold/10 text-doj-gold text-xs tracking-widest rounded">
+                            <Terminal className="w-4 h-4 shrink-0" />
+                            <p>ENTER UNIVERSAL PASSWORD TO AUTHORIZE WITH GOOGLE.</p>
+                        </div>
+
+                        {error && (
+                            <div className="flex items-center gap-2 p-3 border border-red-500/50 bg-red-500/10 text-red-500 text-xs tracking-widest rounded">
+                                <AlertTriangle className="w-4 h-4 shrink-0" />
+                                <p>{error}</p>
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="block text-[10px] tracking-widest text-slate-500 uppercase mb-1">
+                                Universal Password
+                            </label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input
+                                    type="password"
+                                    value={googleSitePassword}
+                                    onChange={(e) => setGoogleSitePassword(e.target.value)}
+                                    className="w-full bg-black/50 border border-slate-700 text-[#86efac] pl-10 pr-4 py-3 rounded text-sm tracking-widest focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors placeholder:text-slate-700"
+                                    placeholder="••••••••"
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className={`w-full bg-doj-gold hover:bg-yellow-500 text-slate-950 font-bold py-3 rounded uppercase tracking-[0.2em] text-xs transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] active:scale-[0.98] ${loading ? 'opacity-70 cursor-wait' : ''}`}
+                        >
+                            {loading ? 'AUTHENTICATING...' : 'COMPLETE AUTHORIZATION'}
+                        </button>
+
+                        <div className="text-center">
+                            <button
+                                type="button"
+                                onClick={() => { setGooglePendingStep(false); setGoogleSitePassword(''); setError(''); setInfo(''); }}
+                                className="text-[10px] tracking-widest text-slate-500 hover:text-doj-gold transition-colors uppercase"
+                            >
+                                &gt; CANCEL
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                <>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {error && (
@@ -257,6 +323,8 @@ export default function LoginScreen() {
                         {mode === 'signin' ? '> REQUEST ACCESS (NEW AGENT)' : '> ALREADY CLEARED (SIGN IN)'}
                     </button>
                 </div>
+                </>
+                )}
             </div>
         </div>
     );
