@@ -495,6 +495,7 @@ export default function App() {
                     key={file.id}
                     file={file}
                     index={index}
+                    fileNumber={filteredFiles.length - index}
                     onRedactedClick={handleRedactedClick}
                     user={user}
                     onDelete={handleDeleteFile}
@@ -505,6 +506,7 @@ export default function App() {
                     key={file.id}
                     file={file}
                     index={index}
+                    fileNumber={filteredFiles.length - index}
                     onRedactedClick={handleRedactedClick}
                     user={user}
                     onDelete={handleDeleteFile}

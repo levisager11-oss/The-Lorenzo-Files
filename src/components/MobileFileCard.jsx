@@ -16,7 +16,7 @@ const statusIcon = {
     'UNDER REVIEW': Folder,
 };
 
-export default function MobileFileCard({ file, index, onRedactedClick, user, onDelete, isDeleting }) {
+export default function MobileFileCard({ file, index, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
 
@@ -59,7 +59,7 @@ export default function MobileFileCard({ file, index, onRedactedClick, user, onD
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className="text-xs font-mono text-slate-600 shrink-0">
-                        {String(index + 1).padStart(3, '0')}
+                        {String(fileNumber).padStart(3, '0')}
                     </span>
                     {file.downloadURL ? (
                         <a

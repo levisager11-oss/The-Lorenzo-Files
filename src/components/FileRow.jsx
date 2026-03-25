@@ -16,7 +16,7 @@ const statusIcon = {
     'UNDER REVIEW': Folder,
 };
 
-export default function FileRow({ file, index, onRedactedClick, user, onDelete, isDeleting }) {
+export default function FileRow({ file, index, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
 
@@ -58,7 +58,7 @@ export default function FileRow({ file, index, onRedactedClick, user, onDelete, 
         >
             {/* Index */}
             <div className="text-xs font-mono text-slate-600">
-                {String(index + 1).padStart(3, '0')}
+                {String(fileNumber).padStart(3, '0')}
             </div>
 
             {/* Votes */}
