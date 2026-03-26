@@ -7,6 +7,7 @@ import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
 import MobileFileCard from './components/MobileFileCard';
 import SecurityBreach from './components/SecurityBreach';
+import FeedView from './components/FeedView';
 import useIsMobile from './hooks/useIsMobile';
 import UploadModal from './components/UploadModal';
 import { participantNames } from './data/names';
@@ -57,6 +58,7 @@ export default function App() {
   const [breached, setBreached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('date-desc');
+  const [feedOpen, setFeedOpen] = useState(false);
 
   // Upload State
   const [uploading, setUploading] = useState(false);
@@ -69,6 +71,17 @@ export default function App() {
   const isMobile = useIsMobile();
 
   // Auth Listener
+  // Escape key handler for FeedView
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape' && feedOpen) {
+        setFeedOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [feedOpen]);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -347,10 +360,20 @@ export default function App() {
 
       {/* Main content */}
       <div className="relative z-10">
-        <Header />
+        <Header feedOpen={feedOpen} setFeedOpen={setFeedOpen} />
 
-        {/* Classification Banner */}
-        <div className="bg-red-950/40 border-y border-red-900/30">
+        {feedOpen ? (
+          <FeedView
+            files={filteredFiles}
+            user={user}
+            onDelete={handleDeleteFile}
+            deletingId={deletingId}
+            onRedactedClick={handleRedactedClick}
+          />
+        ) : (
+          <>
+            {/* Classification Banner */}
+            <div className="bg-red-950/40 border-y border-red-900/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-center gap-3">
             <AlertTriangle className="w-4 h-4 text-red-400" />
             <p className="text-xs font-mono text-red-400 tracking-widest">
@@ -541,17 +564,19 @@ export default function App() {
             )}
           </div>
 
-          {/* Footer */}
-          <footer className="mt-8 pb-8 text-center">
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-6" />
-            <p className="text-xs font-mono text-slate-600 tracking-wider">
-              DEPARTMENT OF LORENZO — EVIDENCE MANAGEMENT SYSTEM v4.2.0
-            </p>
-            <p className="text-[10px] font-mono text-slate-700 mt-1 tracking-wider">
-              UNAUTHORIZED ACCESS IS PUNISHABLE BY HAVING TO LISTEN TO LORENZO'S KARAOKE
-            </p>
-          </footer>
-        </main>
+              {/* Footer */}
+              <footer className="mt-8 pb-8 text-center">
+                <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-6" />
+                <p className="text-xs font-mono text-slate-600 tracking-wider">
+                  DEPARTMENT OF LORENZO — EVIDENCE MANAGEMENT SYSTEM v4.2.0
+                </p>
+                <p className="text-[10px] font-mono text-slate-700 mt-1 tracking-wider">
+                  UNAUTHORIZED ACCESS IS PUNISHABLE BY HAVING TO LISTEN TO LORENZO'S KARAOKE
+                </p>
+              </footer>
+            </main>
+          </>
+        )}
       </div>
 
       {showUploadModal && (
