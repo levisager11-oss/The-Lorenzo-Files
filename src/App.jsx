@@ -179,6 +179,18 @@ export default function App() {
   };
 
   const handleFileSelect = (event) => {
+    // Enforce 3 uploads per day per user
+    if (user) {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const todayUploads = files.filter(f => f.uploadedById === user.uid && f.date === today);
+      if (todayUploads.length >= 3) {
+        alert("SECURITY PROTOCOL VIOLATION: YOU HAVE REACHED YOUR DAILY UPLOAD LIMIT OF 3 FILES.");
+        event.target.value = '';
+        return;
+      }
+    }
+
     const file = event.target.files[0];
     if (!file) return;
 
@@ -220,7 +232,8 @@ export default function App() {
       }
 
       // Format today's date
-      const today = new Date().toISOString().split('T')[0];
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
       // Upload physical file to Firebase Storage
       const storagePath = `uploads/${Date.now()}_${fileToUpload.name}`;
