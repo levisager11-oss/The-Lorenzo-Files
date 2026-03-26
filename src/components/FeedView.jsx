@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { ArrowDown, Trash2, Loader2, ShieldAlert } from 'lucide-react';
+import { ArrowDown, Trash2, Loader2 } from 'lucide-react';
 import VoteButtons from './VoteButtons';
 import RedactedBox from './RedactedBox';
 
@@ -31,7 +30,7 @@ function FeedSlide({ file, user, onDelete, isDeleting, onRedactedClick }) {
         if (parts.length !== 3) return dateStr;
         const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        return `LOGGED: ${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        return `LOGGED: ${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
     };
 
     const handleDownload = async (e) => {
