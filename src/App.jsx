@@ -31,6 +31,7 @@ import {
 import LoginScreen from './components/LoginScreen';
 import EmailVerificationGate from './components/EmailVerificationGate';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Helper to convert stored size values to bytes for sorting
 function parseSize(file) {
@@ -334,6 +335,7 @@ export default function App() {
   return (
     <div className="relative min-h-screen bg-slate-900 font-sans">
       <Analytics />
+      <SpeedInsights />
       {/* Grain overlay */}
       <div className="grain-overlay" />
       {/* Scanlines */}
