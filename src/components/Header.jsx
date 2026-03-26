@@ -1,8 +1,8 @@
-import { ShieldAlert, Lock, Radio, LogOut } from 'lucide-react';
+import { ShieldAlert, Lock, Radio, LogOut, Rows3 } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
-export default function Header() {
+export default function Header({ feedOpen, onToggleFeed }) {
     const handleSignOut = () => {
         signOut(auth).catch(console.error);
     };
@@ -50,6 +50,19 @@ export default function Header() {
                                 <span>SIGNAL: ACTIVE</span>
                             </div>
                         </div>
+                        {onToggleFeed && (
+                            <button
+                                onClick={onToggleFeed}
+                                className={`flex items-center gap-2 px-3 py-1.5 border rounded transition-colors duration-300 text-xs font-mono uppercase tracking-widest ${
+                                    feedOpen
+                                        ? 'border-doj-gold/60 bg-doj-gold/10 text-doj-gold'
+                                        : 'border-slate-700/60 hover:bg-slate-800 hover:border-doj-gold/40 text-slate-400 hover:text-doj-gold'
+                                }`}
+                            >
+                                <Rows3 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">FEED</span>
+                            </button>
+                        )}
                         <button
                             onClick={handleSignOut}
                             className="flex items-center gap-2 px-3 py-1.5 border border-red-900/50 hover:bg-red-900/20 hover:border-red-500/50 rounded transition-colors duration-300 text-xs font-mono text-red-500/80 hover:text-red-400 uppercase tracking-widest"

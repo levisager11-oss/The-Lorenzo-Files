@@ -7,6 +7,7 @@ import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
 import MobileFileCard from './components/MobileFileCard';
 import SecurityBreach from './components/SecurityBreach';
+import FeedView from './components/FeedView';
 import useIsMobile from './hooks/useIsMobile';
 import UploadModal from './components/UploadModal';
 import { participantNames } from './data/names';
@@ -57,6 +58,9 @@ export default function App() {
   const [breached, setBreached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('date-desc');
+
+  // Feed view state
+  const [feedOpen, setFeedOpen] = useState(false);
 
   // Upload State
   const [uploading, setUploading] = useState(false);
@@ -347,7 +351,7 @@ export default function App() {
 
       {/* Main content */}
       <div className="relative z-10">
-        <Header />
+        <Header feedOpen={feedOpen} onToggleFeed={() => setFeedOpen(v => !v)} />
 
         {/* Classification Banner */}
         <div className="bg-red-950/40 border-y border-red-900/30">
@@ -559,6 +563,18 @@ export default function App() {
           file={fileToUpload}
           onClose={handleCancelUpload}
           onConfirm={(context, suspectNames) => processFileUpload(context, suspectNames)}
+        />
+      )}
+
+      {/* Feed View Overlay */}
+      {feedOpen && (
+        <FeedView
+          files={filteredFiles}
+          user={user}
+          onClose={() => setFeedOpen(false)}
+          onDelete={handleDeleteFile}
+          deletingId={deletingId}
+          onRedactedClick={handleRedactedClick}
         />
       )}
 
