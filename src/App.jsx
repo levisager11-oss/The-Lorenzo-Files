@@ -350,8 +350,11 @@ export default function App() {
       </div>
 
       {/* Main content */}
-      <div className="relative z-10">
+      <div className="relative z-[60]">
         <Header feedOpen={feedOpen} onToggleFeed={() => setFeedOpen(v => !v)} />
+      </div>
+
+      <div className="relative z-10">
 
         {/* Classification Banner */}
         <div className="bg-red-950/40 border-y border-red-900/30">

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { ArrowDown, Trash2, Loader2 } from 'lucide-react';
+import { ArrowDown, Trash2, Loader2, X } from 'lucide-react';
 import VoteButtons from './VoteButtons';
 import RedactedBox from './RedactedBox';
 
-function FeedSlide({ file, user, onDelete, isDeleting, onRedactedClick }) {
+function FeedSlide({ file, user, onDelete, isDeleting, onRedactedClick, scrollRoot }) {
     const ref = useRef(null);
     const [isVisible, setIsVisible] = useState(false);
     const isOwner = file.uploadedById === user?.uid;
@@ -16,11 +17,11 @@ function FeedSlide({ file, user, onDelete, isDeleting, onRedactedClick }) {
             ([entry]) => {
                 if (entry.isIntersecting) setIsVisible(true);
             },
-            { threshold: 0.3 }
+            { root: scrollRoot, threshold: 0.3 }
         );
         observer.observe(el);
         return () => observer.disconnect();
-    }, []);
+    }, [scrollRoot]);
 
     const suspects = file.suspectNames || (file.suspectName ? [file.suspectName] : ['Lorenzo']);
 
@@ -177,7 +178,14 @@ function FeedSlide({ file, user, onDelete, isDeleting, onRedactedClick }) {
 
 export default function FeedView({ files, user, onClose, onDelete, deletingId, onRedactedClick }) {
     const containerRef = useRef(null);
+    const [containerEl, setContainerEl] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
+
+    // Callback ref to capture the container DOM element for IntersectionObserver
+    const setContainerRef = useCallback((node) => {
+        containerRef.current = node;
+        setContainerEl(node);
+    }, []);
 
     // Track current slide via scroll position
     useEffect(() => {
@@ -234,7 +242,7 @@ export default function FeedView({ files, user, onClose, onDelete, deletingId, o
 
     return (
         <div
-            ref={containerRef}
+            ref={setContainerRef}
             className="feed-container fixed inset-0 z-50 overflow-y-scroll bg-[#0a0e1a]"
             style={{
                 scrollSnapType: 'y mandatory',
@@ -249,6 +257,7 @@ export default function FeedView({ files, user, onClose, onDelete, deletingId, o
                     onDelete={onDelete}
                     isDeleting={deletingId === (file.docId || file.id.toString())}
                     onRedactedClick={onRedactedClick}
+                    scrollRoot={containerEl}
                 />
             ))}
 
@@ -258,6 +267,15 @@ export default function FeedView({ files, user, onClose, onDelete, deletingId, o
                     <p className="text-sm font-mono text-slate-600 tracking-widest">NO FILES IN FEED</p>
                 </div>
             )}
+
+            {/* Close button */}
+            <button
+                onClick={onClose}
+                className="fixed top-4 right-4 z-[60] p-2 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                title="Close feed (Esc)"
+            >
+                <X className="w-5 h-5" />
+            </button>
 
             {/* Vertical progress indicator */}
             {files.length > 1 && (
