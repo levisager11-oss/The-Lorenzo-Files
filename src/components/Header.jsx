@@ -2,13 +2,13 @@ import { ShieldAlert, Lock, Radio, LogOut } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
-export default function Header() {
+export default function Header({ feedOpen = false, onFeedToggle }) {
     const handleSignOut = () => {
         signOut(auth).catch(console.error);
     };
 
     return (
-        <header className="relative border-b border-amber-900/30 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
+        <header className="sticky top-0 z-[70] border-b border-amber-900/30 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
             {/* Top gold accent line */}
             <div className="h-1 bg-gradient-to-r from-transparent via-doj-gold to-transparent" />
 
@@ -50,13 +50,26 @@ export default function Header() {
                                 <span>SIGNAL: ACTIVE</span>
                             </div>
                         </div>
-                        <button
-                            onClick={handleSignOut}
-                            className="flex items-center gap-2 px-3 py-1.5 border border-red-900/50 hover:bg-red-900/20 hover:border-red-500/50 rounded transition-colors duration-300 text-xs font-mono text-red-500/80 hover:text-red-400 uppercase tracking-widest"
-                        >
-                            <LogOut className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Sign Out</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={onFeedToggle}
+                                className={`px-3 py-1.5 border rounded transition-colors duration-300 text-xs font-mono uppercase tracking-[0.3em] ${
+                                    feedOpen
+                                        ? 'border-doj-gold/60 bg-doj-gold/15 text-doj-gold shadow-[0_0_18px_rgba(201,168,76,0.12)]'
+                                        : 'border-amber-900/50 text-slate-300 hover:bg-amber-900/20 hover:border-doj-gold/40 hover:text-doj-gold'
+                                }`}
+                            >
+                                FEED
+                            </button>
+                            <button
+                                onClick={handleSignOut}
+                                className="flex items-center gap-2 px-3 py-1.5 border border-red-900/50 hover:bg-red-900/20 hover:border-red-500/50 rounded transition-colors duration-300 text-xs font-mono text-red-500/80 hover:text-red-400 uppercase tracking-widest"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Sign Out</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

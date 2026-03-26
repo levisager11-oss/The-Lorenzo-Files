@@ -16,7 +16,7 @@ const statusIcon = {
     'UNDER REVIEW': Folder,
 };
 
-export default function MobileFileCard({ file, index, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
+export default function MobileFileCard({ file, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
 
