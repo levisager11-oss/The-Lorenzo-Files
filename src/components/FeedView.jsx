@@ -60,8 +60,8 @@ function FeedSlide({ file, user, onDelete, isDeleting, onRedactedClick, scrollRo
             style={{ scrollSnapAlign: 'start' }}
         >
             {/* Scanlines + grain per slide */}
-            <div className="absolute inset-0 pointer-events-none scanlines" style={{ position: 'absolute', zIndex: 1 }} />
-            <div className="absolute inset-0 pointer-events-none grain-overlay" style={{ position: 'absolute', zIndex: 1 }} />
+            <div className="absolute inset-0 pointer-events-none scanlines" style={{ zIndex: 1 }} />
+            <div className="absolute inset-0 pointer-events-none grain-overlay" style={{ zIndex: 1 }} />
 
             <motion.div
                 className="relative z-10 flex flex-col justify-between h-full"
@@ -271,6 +271,7 @@ export default function FeedView({ files, user, onClose, onDelete, deletingId, o
             {/* Close button */}
             <button
                 onClick={onClose}
+                aria-label="Close feed"
                 className="fixed top-4 right-4 z-[60] p-2 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
                 title="Close feed (Esc)"
             >
