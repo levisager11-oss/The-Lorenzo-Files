@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { ArrowDownToLine, ShieldAlert, Trash2, X } from 'lucide-react';
 import RedactedBox from './RedactedBox';
@@ -165,6 +166,7 @@ function FeedSlide({ file, isVisible, onRedactedClick, user, onDelete, isDeletin
 export default function FeedView({ files, user, onRedactedClick, onDelete, deletingId, onClose }) {
   const containerRef = useRef(null);
   const slideRefs = useRef([]);
+  const ratiosRef = useRef(new Map());
   const [visibleSlides, setVisibleSlides] = useState(() => new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -182,14 +184,12 @@ export default function FeedView({ files, user, onRedactedClick, onDelete, delet
       container.scrollTop = 0;
     }
     slideRefs.current = [];
-    setCurrentIndex(0);
-    setVisibleSlides(new Set());
   }, [files]);
 
   useEffect(() => {
     if (!files.length) return undefined;
 
-    const ratios = new Map();
+    ratiosRef.current = new Map();
     const observer = new IntersectionObserver(
       (entries) => {
         setVisibleSlides((current) => {
@@ -203,12 +203,12 @@ export default function FeedView({ files, user, onRedactedClick, onDelete, delet
         });
 
         entries.forEach((entry) => {
-          ratios.set(Number(entry.target.dataset.index), entry.isIntersecting ? entry.intersectionRatio : 0);
+          ratiosRef.current.set(Number(entry.target.dataset.index), entry.isIntersecting ? entry.intersectionRatio : 0);
         });
 
-        let nextIndex = currentIndex;
+        let nextIndex = 0;
         let maxRatio = 0;
-        ratios.forEach((ratio, index) => {
+        ratiosRef.current.forEach((ratio, index) => {
           if (ratio > maxRatio) {
             maxRatio = ratio;
             nextIndex = index;
@@ -216,7 +216,7 @@ export default function FeedView({ files, user, onRedactedClick, onDelete, delet
         });
 
         if (maxRatio > 0) {
-          setCurrentIndex(nextIndex);
+          setCurrentIndex((current) => (current === nextIndex ? current : nextIndex));
         }
       },
       {
@@ -230,7 +230,7 @@ export default function FeedView({ files, user, onRedactedClick, onDelete, delet
     });
 
     return () => observer.disconnect();
-  }, [files, currentIndex]);
+  }, [files]);
 
   useEffect(() => {
     if (!files.length) return undefined;
@@ -288,6 +288,7 @@ export default function FeedView({ files, user, onRedactedClick, onDelete, delet
           files.map((file, index) => (
             <div
               key={file.docId || file.id}
+              className="snap-start"
               ref={(node) => {
                 slideRefs.current[index] = node;
               }}

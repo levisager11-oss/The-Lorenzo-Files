@@ -567,13 +567,13 @@ export default function App() {
                 </p>
               </footer>
             </main>
-          </div>
           </>
         )}
       </div>
 
       {feedOpen && (
         <FeedView
+          key={filteredFiles.map((file) => file.docId || file.id).join('|') || 'empty-feed'}
           files={filteredFiles}
           user={user}
           onRedactedClick={handleRedactedClick}
