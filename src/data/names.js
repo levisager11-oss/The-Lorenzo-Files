@@ -26,5 +26,6 @@ export const participantNames = [
   "Stefan",
   "Vita",
   "Chris",
-  "Peter"
+  "Peter",
+  "Jael"
 ].sort();
