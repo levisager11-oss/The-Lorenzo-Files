@@ -445,7 +445,9 @@ export default function DevMenu({
                         type="button"
                         disabled={forceLevel === ''}
                         onClick={() => {
-                          const lvl = Math.max(0, Math.min(4, parseInt(forceLevel, 10)));
+                          const parsed = parseInt(forceLevel, 10);
+                          if (isNaN(parsed)) return;
+                          const lvl = Math.max(0, Math.min(4, parsed));
                           onSetSecurityLevel(lvl);
                           setForceLevel('');
                         }}
@@ -454,7 +456,7 @@ export default function DevMenu({
                         Set
                       </button>
                     </div>
-                    <p className="text-slate-600 text-[10px] mt-1">Values &gt; 3 trigger a breach.</p>
+                    <p className="text-slate-600 text-[10px] mt-1">Values {'>'} 3 trigger a breach.</p>
                   </section>
 
                   {/* Upload Limit Override */}
