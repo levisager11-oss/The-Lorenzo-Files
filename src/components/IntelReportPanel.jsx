@@ -5,12 +5,17 @@ import { Trash2, Loader2, ChevronUp } from 'lucide-react';
 import { db } from '../lib/firebase';
 import {
     collection,
+    collectionGroup,
     onSnapshot,
     doc,
     setDoc,
     deleteDoc,
     query,
-    orderBy
+    orderBy,
+    where,
+    getDocs,
+    increment,
+    updateDoc
 } from 'firebase/firestore';
 import { voteOnComment } from '../lib/voteOnComment';
 
@@ -88,7 +93,7 @@ function formatTimestamp(ts) {
     return `${yyyy}-${MM}-${dd} ${HH}:${mm}`;
 }
 
-export default function IntelReportPanel({ file, user, userProfile, onCountChange }) {
+export default function IntelReportPanel({ file, user, userProfile }) {
     const [reports, setReports] = useState([]);
     const [text, setText] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -105,43 +110,53 @@ export default function IntelReportPanel({ file, user, userProfile, onCountChang
                 ...doc.data()
             }));
             setReports(data);
-            if (onCountChange) {
-                onCountChange(data.length);
-            }
         });
 
         return () => unsubscribe();
-    }, [fileDocId, onCountChange]);
+    }, [fileDocId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         const trimmed = text.trim();
         if (!trimmed) return;
 
-        // Check daily limit: max 5 per day per user (calculated across all files or just this one?
-        // Instructions: "add a 5 comments per day per user limit" - to enforce globally across all files on client side,
-        // we'd need to query all files. But since we only have `reports` for this file in context,
-        // and we cannot easily query a subcollection group in Firestore without an index,
-        // we will do a simple check on the current file's reports as a baseline, or just let them know.
-        // Let's implement the daily limit check against the loaded reports for this file for now to be safe,
-        // or actually since it's client side, we might only know about this file's comments.
-        // Let's count today's reports from the current user in `reports`.
-        const todayStr = new Date().toDateString();
-        const todaysReports = reports.filter(r =>
-            r.authorId === user.uid &&
-            new Date(r.createdAt).toDateString() === todayStr
-        );
+        setSubmitting(true);
 
-        // We apply a strict 5 per day per user limit check here, keeping in mind it only accounts for this file.
-        // But since the instruction just says "add a 5 comments per day per user limit", let's apply it.
-        // Since we can't easily query all subcollections without setting up a collection group index which isn't mentioned,
-        // this is the best effort.
-        if (todaysReports.length >= 5) {
-            alert("SECURITY PROTOCOL VIOLATION: YOU HAVE REACHED YOUR DAILY INTEL REPORT LIMIT (5).");
-            return;
+        // Check global daily limit: max 5 per day per user
+        // We do a collectionGroup query to find all reports by this user today.
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startOfDay = today.getTime();
+
+        try {
+            const reportsGroupRef = collectionGroup(db, 'intelReports');
+            const dailyQ = query(
+                reportsGroupRef,
+                where("authorId", "==", user.uid),
+                where("createdAt", ">=", startOfDay)
+            );
+            const dailySnap = await getDocs(dailyQ);
+
+            if (dailySnap.size >= 5) {
+                alert("SECURITY PROTOCOL VIOLATION: YOU HAVE REACHED YOUR DAILY INTEL REPORT LIMIT (5).");
+                setSubmitting(false);
+                return;
+            }
+        } catch (err) {
+            console.error("Failed to check daily limit, proceeding anyway to avoid blocking valid usage without index:", err);
+            // If the index for the collection group doesn't exist, it will throw. We'll fallback to local check if it fails.
+            const todayStr = new Date().toDateString();
+            const todaysReports = reports.filter(r =>
+                r.authorId === user.uid &&
+                new Date(r.createdAt).toDateString() === todayStr
+            );
+            if (todaysReports.length >= 5) {
+                alert("SECURITY PROTOCOL VIOLATION: YOU HAVE REACHED YOUR DAILY INTEL REPORT LIMIT (5) FOR THIS FILE.");
+                setSubmitting(false);
+                return;
+            }
         }
 
-        setSubmitting(true);
         try {
             const reportId = Date.now().toString();
             const reportRef = doc(db, "evidenceFiles", fileDocId, "intelReports", reportId);
@@ -154,6 +169,13 @@ export default function IntelReportPanel({ file, user, userProfile, onCountChang
                 createdAt: Date.now(),
                 upvotes: 0
             });
+
+            // Update parent document counter
+            const parentRef = doc(db, "evidenceFiles", fileDocId);
+            await updateDoc(parentRef, {
+                commentCount: increment(1)
+            });
+
             setText("");
         } catch (err) {
             console.error("Failed to submit report:", err);
@@ -167,6 +189,12 @@ export default function IntelReportPanel({ file, user, userProfile, onCountChang
         try {
             const reportRef = doc(db, "evidenceFiles", fileDocId, "intelReports", reportId);
             await deleteDoc(reportRef);
+
+            // Decrement parent document counter
+            const parentRef = doc(db, "evidenceFiles", fileDocId);
+            await updateDoc(parentRef, {
+                commentCount: increment(-1)
+            });
         } catch (err) {
             console.error("Failed to delete report:", err);
             alert("Error deleting intel report.");

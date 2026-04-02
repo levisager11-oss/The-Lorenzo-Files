@@ -4,13 +4,6 @@ import RedactedBox from './RedactedBox';
 import VoteButtons from './VoteButtons';
 import IntelReportPanel from './IntelReportPanel';
 
-const statusBadge = {
-    CLASSIFIED: 'badge-classified',
-    SEALED: 'badge-sealed',
-    REDACTED: 'badge-redacted',
-    'UNDER REVIEW': 'badge-review',
-};
-
 const statusIcon = {
     CLASSIFIED: FileLock,
     SEALED: FileLock,
@@ -24,7 +17,8 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
     const [showReports, setShowReports] = useState(false);
-    const [commentCount, setCommentCount] = useState(0);
+
+    const commentCount = file.commentCount || 0;
 
     const handleDoubleClick = async () => {
         if (!file.downloadURL) return;
@@ -56,7 +50,7 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
     return (
         <div className="flex flex-col border-b border-slate-800/60">
             <div
-                className={`file-row grid grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+                className={`file-row grid grid-cols-[40px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_100px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
                 onDoubleClick={(e) => {
                     if (isDeleting) return;
                     handleDoubleClick(e);
@@ -126,15 +120,6 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
                 <span className="text-slate-500">{file.size}</span>
             </div>
 
-            {/* Status Badge */}
-            <div className="flex justify-center shrink-0">
-                <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-wider whitespace-nowrap ${statusBadge[file.status]}`}
-                >
-                    {file.status}
-                </span>
-            </div>
-
             {/* Action / Intel Area */}
             <div className="flex justify-end items-center gap-2 sm:gap-4 min-w-0 w-full overflow-hidden">
                 <button
@@ -191,14 +176,13 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
                 </div>
             </div>
             </div>
-            <div className={showReports ? 'block' : 'hidden'}>
+            {showReports && (
                 <IntelReportPanel
                     file={file}
                     user={user}
                     userProfile={userProfile}
-                    onCountChange={setCommentCount}
                 />
-            </div>
+            )}
         </div>
     );
 }

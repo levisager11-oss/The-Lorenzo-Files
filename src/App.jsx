@@ -77,11 +77,6 @@ export default function App() {
 
   // Auth Listener
   useEffect(() => {
-    if (window.MOCK_FIREBASE) {
-      setUser({ uid: "mock-uid-123", email: "levi.sager11@gmail.com", emailVerified: true });
-      setAuthLoading(false);
-      return () => {};
-    }
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
@@ -93,12 +88,7 @@ export default function App() {
   useEffect(() => {
     if (!user || window.MOCK_FIREBASE) {
       if (window.MOCK_FIREBASE) {
-        // Only set mock username if not explicitly testing the prompt
-        if (window.MOCK_NO_USERNAME) {
-            setUserProfile(null);
-        } else {
-            setUserProfile({ username: 'AGENT-MOCK' });
-        }
+        setUserProfile({ username: 'AGENT-MOCK' });
         setProfileLoading(false);
       }
       return;
@@ -545,7 +535,7 @@ export default function App() {
           <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
             {/* Table Header */}
             {!isMobile && (
-              <div className="grid grid-cols-[30px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+              <div className="grid grid-cols-[30px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_100px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
                 <div>#</div>
                 <div className="text-center">Votes</div>
                 <div>File Name</div>
@@ -554,7 +544,6 @@ export default function App() {
                   <span>Date</span>
                   <span>Size</span>
                 </div>
-                <div className="text-center">Status</div>
                 <div className="text-right sm:pr-2">Intel</div>
               </div>
             )}

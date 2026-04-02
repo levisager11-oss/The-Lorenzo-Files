@@ -4,13 +4,6 @@ import RedactedBox from './RedactedBox';
 import VoteButtons from './VoteButtons';
 import IntelReportPanel from './IntelReportPanel';
 
-const statusBadge = {
-    CLASSIFIED: 'badge-classified',
-    SEALED: 'badge-sealed',
-    REDACTED: 'badge-redacted',
-    'UNDER REVIEW': 'badge-review',
-};
-
 const statusIcon = {
     CLASSIFIED: FileLock,
     SEALED: FileLock,
@@ -24,7 +17,8 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
     const [showReports, setShowReports] = useState(false);
-    const [commentCount, setCommentCount] = useState(0);
+
+    const commentCount = file.commentCount || 0;
 
     const handleDoubleClick = async () => {
         if (!file.downloadURL) return;
@@ -109,20 +103,12 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                 </div>
             </div>
 
-            {/* Middle row: Date, Size, Status */}
-            <div className="grid grid-cols-2 gap-2 mt-1">
-                <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase">Suspect</span>
-                    <span className="text-xs font-mono text-slate-300 truncate" title={file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}>
-                        {file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}
-                    </span>
-                </div>
-                <div className="flex flex-col gap-1 items-end">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase">Status</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono tracking-wider whitespace-nowrap ${statusBadge[file.status]}`}>
-                        {file.status}
-                    </span>
-                </div>
+            {/* Middle row: Suspect full width */}
+            <div className="flex flex-col gap-1 mt-1">
+                <span className="text-[10px] font-mono text-slate-500 uppercase">Suspect</span>
+                <span className="text-xs font-mono text-slate-300 truncate" title={file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}>
+                    {file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}
+                </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -193,14 +179,13 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                 </div>
             </div>
             </div>
-            <div className={showReports ? 'block' : 'hidden'}>
+            {showReports && (
                 <IntelReportPanel
                     file={file}
                     user={user}
                     userProfile={userProfile}
-                    onCountChange={setCommentCount}
                 />
-            </div>
+            )}
         </div>
     );
 }
