@@ -82,7 +82,11 @@ export default function App() {
 
   // Promo Banner Logic
   useEffect(() => {
+    if (authLoading) return; // Don't make decisions while auth is resolving
+
     if (!user) {
+      // Clear storage only if we have explicitly resolved that there is no user
+      // (e.g., they logged out). We check authLoading first.
       localStorage.removeItem('promoBannerStartTime');
       setShowPromoBanner(false);
       return;
@@ -108,7 +112,7 @@ export default function App() {
     } else {
       setShowPromoBanner(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   useEffect(() => {
     if (!user) return; // Don't fetch files if not authenticated
@@ -381,21 +385,24 @@ export default function App() {
       {/* Main content */}
       <div className="relative z-10">
         {showPromoBanner && (
-          <div className="bg-doj-gold/20 border-b border-doj-gold/30">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-center text-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-doj-gold" />
-              <p className="text-xs font-mono text-doj-gold tracking-wider">
-                Check out the new LOLODepartment:{' '}
-                <a
-                  href="https://mymap.icu/join.php?v=PUOBWR.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white underline hover:text-amber-200 font-bold ml-1 transition-colors"
-                >
-                  https://mymap.icu/join.php?v=PUOBWR.html
-                </a>
-              </p>
-              <AlertTriangle className="w-4 h-4 text-doj-gold" />
+          <div className="bg-doj-gold border-b-4 border-yellow-400 shadow-2xl shadow-doj-gold/50 animate-pulse relative overflow-hidden z-50">
+            <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(0,0,0,0.1)_10px,rgba(0,0,0,0.1)_20px)]" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-center text-center gap-4 relative">
+              <AlertTriangle className="w-8 h-8 text-black animate-bounce shrink-0" strokeWidth={3} />
+              <div className="flex flex-col items-center">
+                <p className="text-base sm:text-xl font-mono text-black font-black tracking-widest uppercase mb-1 drop-shadow-md">
+                  Check out the new Lorenzo Departments Website{' '}
+                  <a
+                    href="https://mymap.icu/join.php?v=PUOBWR.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-white bg-black px-2 py-0.5 rounded underline hover:text-doj-gold transition-colors shadow-lg active:scale-95"
+                  >
+                    here
+                  </a>
+                </p>
+              </div>
+              <AlertTriangle className="w-8 h-8 text-black animate-bounce shrink-0 hidden sm:block" strokeWidth={3} />
             </div>
           </div>
         )}
