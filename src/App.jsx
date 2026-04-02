@@ -30,6 +30,7 @@ import {
 
 import LoginScreen from './components/LoginScreen';
 import EmailVerificationGate from './components/EmailVerificationGate';
+import DevMenu from './components/DevMenu';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
@@ -65,6 +66,9 @@ export default function App() {
   
   // Purge State
   const [fileToPurge, setFileToPurge] = useState(null);
+
+  // Dev Menu State
+  const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
 
   const isMobile = useIsMobile();
 
@@ -185,7 +189,7 @@ export default function App() {
       const d = new Date();
       const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const todayUploads = files.filter(f => f.uploadedById === user.uid && f.date === today);
-      if (todayUploads.length >= 3) {
+      if (todayUploads.length >= 3 && !devBypassUploadLimit) {
         alert("SECURITY PROTOCOL VIOLATION: YOU HAVE REACHED YOUR DAILY UPLOAD LIMIT OF 3 FILES.");
         event.target.value = '';
         return;
@@ -564,6 +568,17 @@ export default function App() {
 
       {/* Security Breach Overlay */}
       {breached && <SecurityBreach onDismiss={handleDismissBreach} />}
+
+      {/* Developer Menu (levi.sager11@gmail.com only) */}
+      <DevMenu
+        user={user}
+        files={files}
+        onResetSecurity={() => { setSecurityLevel(0); setBreached(false); }}
+        onSetSecurityLevel={(lvl) => { setSecurityLevel(lvl); if (lvl > 3) setBreached(true); else setBreached(false); }}
+        onTriggerBreach={() => setBreached(true)}
+        devBypassUploadLimit={devBypassUploadLimit}
+        onSetDevBypassUploadLimit={setDevBypassUploadLimit}
+      />
 
       {/* Custom Purge Confirmation Modal */}
       {fileToPurge && (
