@@ -66,6 +66,9 @@ export default function App() {
   // Purge State
   const [fileToPurge, setFileToPurge] = useState(null);
 
+  // Promo Banner State
+  const [showPromoBanner, setShowPromoBanner] = useState(false);
+
   const isMobile = useIsMobile();
 
   // Auth Listener
@@ -76,6 +79,36 @@ export default function App() {
     });
     return unsub;
   }, []);
+
+  // Promo Banner Logic
+  useEffect(() => {
+    if (!user) {
+      localStorage.removeItem('promoBannerStartTime');
+      setShowPromoBanner(false);
+      return;
+    }
+
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    let startTime = localStorage.getItem('promoBannerStartTime');
+
+    if (!startTime) {
+      startTime = Date.now().toString();
+      localStorage.setItem('promoBannerStartTime', startTime);
+    }
+
+    const timePassed = Date.now() - parseInt(startTime, 10);
+    const timeLeft = TWENTY_FOUR_HOURS - timePassed;
+
+    if (timeLeft > 0) {
+      setShowPromoBanner(true);
+      const timer = setTimeout(() => {
+        setShowPromoBanner(false);
+      }, timeLeft);
+      return () => clearTimeout(timer);
+    } else {
+      setShowPromoBanner(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!user) return; // Don't fetch files if not authenticated
@@ -347,6 +380,25 @@ export default function App() {
 
       {/* Main content */}
       <div className="relative z-10">
+        {showPromoBanner && (
+          <div className="bg-doj-gold/20 border-b border-doj-gold/30">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-center text-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-doj-gold" />
+              <p className="text-xs font-mono text-doj-gold tracking-wider">
+                Check out the new LOLODepartment:{' '}
+                <a
+                  href="https://mymap.icu/join.php?v=PUOBWR.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white underline hover:text-amber-200 font-bold ml-1 transition-colors"
+                >
+                  https://mymap.icu/join.php?v=PUOBWR.html
+                </a>
+              </p>
+              <AlertTriangle className="w-4 h-4 text-doj-gold" />
+            </div>
+          </div>
+        )}
         <Header />
 
         {/* Classification Banner */}
