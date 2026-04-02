@@ -50,7 +50,7 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
     return (
         <div className="flex flex-col border-b border-slate-800/60">
             <div
-                className={`file-row grid grid-cols-[40px_60px_1fr_200px] sm:grid-cols-[40px_60px_1fr_100px_80px_240px] lg:grid-cols-[40px_60px_1fr_120px_100px_300px] gap-2 items-center px-4 sm:px-6 py-3 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+                className={`file-row grid grid-cols-[40px_60px_1fr_200px] sm:grid-cols-[40px_60px_1fr_100px_120px_240px] lg:grid-cols-[40px_60px_1fr_120px_140px_300px] gap-2 items-center px-4 sm:px-6 py-3 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
                 onDoubleClick={(e) => {
                     if (isDeleting) return;
                     handleDoubleClick(e);

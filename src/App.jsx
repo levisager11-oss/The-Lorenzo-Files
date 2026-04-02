@@ -535,7 +535,7 @@ export default function App() {
           <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
             {/* Table Header */}
             {!isMobile && (
-              <div className="grid grid-cols-[30px_60px_1fr_200px] sm:grid-cols-[40px_60px_1fr_100px_80px_240px] lg:grid-cols-[40px_60px_1fr_120px_100px_300px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+              <div className="grid grid-cols-[30px_60px_1fr_200px] sm:grid-cols-[40px_60px_1fr_100px_120px_240px] lg:grid-cols-[40px_60px_1fr_120px_140px_300px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
                 <div>#</div>
                 <div className="text-center">Votes</div>
                 <div>File Name</div>
