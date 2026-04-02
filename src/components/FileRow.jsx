@@ -19,7 +19,8 @@ const statusIcon = {
 };
 
 // eslint-disable-next-line no-unused-vars
-export default function FileRow({ file, index, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
+// eslint-disable-next-line no-unused-vars
+export default function FileRow({ file, index, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
     const [showReports, setShowReports] = useState(false);
@@ -84,16 +85,30 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
                         onClick={(e) => e.stopPropagation()} // Prevent double-click trigger when clicking link directly
                     >
                         <Icon className="w-4 h-4 text-doj-gold shrink-0 transition-colors" />
-                        <span className="text-sm font-mono text-doj-gold truncate transition-colors block">
-                            {file.name}
-                        </span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-mono text-doj-gold truncate transition-colors block">
+                                {file.name}
+                            </span>
+                            {file.uploaderUsername && (
+                                <span className="text-[10px] font-mono text-slate-500 truncate">
+                                    BY: {file.uploaderUsername.toUpperCase()}
+                                </span>
+                            )}
+                        </div>
                     </a>
                 ) : (
                     <div className="flex items-center gap-3 min-w-0">
                         <Icon className="w-4 h-4 text-slate-500 shrink-0 group-hover:text-doj-gold transition-colors" />
-                        <span className="text-sm font-mono text-slate-300 truncate group-hover:text-slate-100 transition-colors block">
-                            {file.name}
-                        </span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-mono text-slate-300 truncate group-hover:text-slate-100 transition-colors block">
+                                {file.name}
+                            </span>
+                            {file.uploaderUsername && (
+                                <span className="text-[10px] font-mono text-slate-500 truncate">
+                                    BY: {file.uploaderUsername.toUpperCase()}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -180,6 +195,7 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
                 <IntelReportPanel
                     file={file}
                     user={user}
+                    userProfile={userProfile}
                     onCountChange={setCommentCount}
                 />
             </div>

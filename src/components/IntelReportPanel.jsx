@@ -66,7 +66,10 @@ function CommentVoteButton({ fileId, report, user }) {
 }
 
 // Utility to derive callsign
-function getCallsign(authorEmail, authorId) {
+function getCallsign(authorUsername, authorEmail, authorId) {
+    if (authorUsername) {
+        return authorUsername.toUpperCase();
+    }
     if (authorEmail) {
         const username = authorEmail.split('@')[0];
         return 'AGENT-' + username.toUpperCase().replace(/\./g, '-');
@@ -85,7 +88,7 @@ function formatTimestamp(ts) {
     return `${yyyy}-${MM}-${dd} ${HH}:${mm}`;
 }
 
-export default function IntelReportPanel({ file, user, onCountChange }) {
+export default function IntelReportPanel({ file, user, userProfile, onCountChange }) {
     const [reports, setReports] = useState([]);
     const [text, setText] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -147,6 +150,7 @@ export default function IntelReportPanel({ file, user, onCountChange }) {
                 text: trimmed,
                 authorId: user.uid,
                 authorEmail: user.email || "",
+                authorUsername: userProfile?.username || "",
                 createdAt: Date.now(),
                 upvotes: 0
             });
@@ -204,7 +208,7 @@ export default function IntelReportPanel({ file, user, onCountChange }) {
                                     <div className="flex items-center justify-between mb-1">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[10px] font-mono text-doj-gold tracking-wider truncate">
-                                                {getCallsign(report.authorEmail, report.authorId)}
+                                                {getCallsign(report.authorUsername, report.authorEmail, report.authorId)}
                                             </span>
                                             <span className="text-[10px] font-mono text-slate-600 shrink-0">
                                                 {formatTimestamp(report.createdAt)}

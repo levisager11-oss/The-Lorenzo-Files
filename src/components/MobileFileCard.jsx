@@ -19,7 +19,8 @@ const statusIcon = {
 };
 
 // eslint-disable-next-line no-unused-vars
-export default function MobileFileCard({ file, index, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
+// eslint-disable-next-line no-unused-vars
+export default function MobileFileCard({ file, index, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
     const [showReports, setShowReports] = useState(false);
@@ -72,20 +73,34 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                             href={file.downloadURL}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 min-w-0 hover:underline decoration-doj-gold underline-offset-4"
+                            className="flex items-start gap-2 min-w-0 hover:underline decoration-doj-gold underline-offset-4"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <Icon className="w-4 h-4 text-doj-gold shrink-0" />
-                            <span className="text-sm font-mono text-doj-gold truncate block">
-                                {file.name}
-                            </span>
+                            <Icon className="w-4 h-4 text-doj-gold shrink-0 mt-0.5" />
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-mono text-doj-gold truncate block">
+                                    {file.name}
+                                </span>
+                                {file.uploaderUsername && (
+                                    <span className="text-[10px] font-mono text-slate-500 truncate">
+                                        BY: {file.uploaderUsername.toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
                         </a>
                     ) : (
-                        <div className="flex items-center gap-2 min-w-0">
-                            <Icon className="w-4 h-4 text-slate-500 shrink-0" />
-                            <span className="text-sm font-mono text-slate-300 truncate block">
-                                {file.name}
-                            </span>
+                        <div className="flex items-start gap-2 min-w-0">
+                            <Icon className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-mono text-slate-300 truncate block">
+                                    {file.name}
+                                </span>
+                                {file.uploaderUsername && (
+                                    <span className="text-[10px] font-mono text-slate-500 truncate">
+                                        BY: {file.uploaderUsername.toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -182,6 +197,7 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                 <IntelReportPanel
                     file={file}
                     user={user}
+                    userProfile={userProfile}
                     onCountChange={setCommentCount}
                 />
             </div>
