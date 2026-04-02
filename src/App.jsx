@@ -9,6 +9,7 @@ import MobileFileCard from './components/MobileFileCard';
 import SecurityBreach from './components/SecurityBreach';
 import useIsMobile from './hooks/useIsMobile';
 import UploadModal from './components/UploadModal';
+import UsernamePrompt from './components/UsernamePrompt';
 import { participantNames } from './data/names';
 import { db, storage, auth, onAuthStateChanged } from './lib/firebase';
 import {
@@ -48,7 +49,9 @@ function parseSize(file) {
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const [files, setFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,6 +83,28 @@ export default function App() {
     });
     return unsub;
   }, []);
+
+  // User Profile Listener
+  useEffect(() => {
+    if (!user || window.MOCK_FIREBASE) {
+      if (window.MOCK_FIREBASE) {
+        setUserProfile({ username: 'AGENT-MOCK' });
+        setProfileLoading(false);
+      }
+      return;
+    }
+
+    const docRef = doc(db, "users", user.uid);
+    const unsub = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setUserProfile(docSnap.data());
+      } else {
+        setUserProfile(null);
+      }
+      setProfileLoading(false);
+    });
+    return unsub;
+  }, [user]);
 
   useEffect(() => {
     if (!user) return; // Don't fetch files if not authenticated
@@ -258,6 +283,7 @@ export default function App() {
         suspectNames: suspectNames, // Store array of suspect names
         downloadURL: downloadURL,
         uploadedById: user.uid,     // Track owner via Firebase Auth
+        uploaderUsername: userProfile?.username || '', // Track uploader username
         storagePath: storagePath,   // Facilitate deletion
         upvotes: 0,
         downvotes: 0
@@ -321,6 +347,23 @@ export default function App() {
 
   if (!user.emailVerified) {
     return <EmailVerificationGate user={user} setUser={setUser} />;
+  }
+
+  if (profileLoading) {
+    return (
+      <div className="relative min-h-screen bg-[#0a0e1a] font-sans flex items-center justify-center">
+        <div className="grain-overlay" />
+        <div className="scanlines" />
+        <div className="flex flex-col items-center gap-4 text-slate-500 font-mono">
+          <Loader2 className="w-8 h-8 animate-spin text-doj-gold" />
+          <p className="tracking-widest">LOADING AGENT PROFILE...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return <UsernamePrompt user={user} onComplete={setUserProfile} />;
   }
 
   if (loading) {
@@ -492,7 +535,7 @@ export default function App() {
           <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
             {/* Table Header */}
             {!isMobile && (
-              <div className="grid grid-cols-[30px_60px_1fr_100px_150px] sm:grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+              <div className="grid grid-cols-[30px_60px_1fr_200px] sm:grid-cols-[40px_60px_1fr_100px_120px_240px] lg:grid-cols-[40px_60px_1fr_120px_140px_300px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
                 <div>#</div>
                 <div className="text-center">Votes</div>
                 <div>File Name</div>
@@ -501,7 +544,6 @@ export default function App() {
                   <span>Date</span>
                   <span>Size</span>
                 </div>
-                <div className="text-center">Status</div>
                 <div className="text-right sm:pr-2">Intel</div>
               </div>
             )}
@@ -517,6 +559,7 @@ export default function App() {
                     fileNumber={filteredFiles.length - index}
                     onRedactedClick={handleRedactedClick}
                     user={user}
+                    userProfile={userProfile}
                     onDelete={handleDeleteFile}
                     isDeleting={deletingId === (file.docId || file.id.toString())}
                   />
@@ -528,6 +571,7 @@ export default function App() {
                     fileNumber={filteredFiles.length - index}
                     onRedactedClick={handleRedactedClick}
                     user={user}
+                    userProfile={userProfile}
                     onDelete={handleDeleteFile}
                     isDeleting={deletingId === (file.docId || file.id.toString())}
                   />

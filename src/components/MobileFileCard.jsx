@@ -1,13 +1,8 @@
-import { Folder, FileLock, Trash2, Loader2, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+import { Folder, FileLock, Trash2, Loader2, ShieldAlert, MessageSquare } from 'lucide-react';
 import RedactedBox from './RedactedBox';
 import VoteButtons from './VoteButtons';
-
-const statusBadge = {
-    CLASSIFIED: 'badge-classified',
-    SEALED: 'badge-sealed',
-    REDACTED: 'badge-redacted',
-    'UNDER REVIEW': 'badge-review',
-};
+import IntelReportPanel from './IntelReportPanel';
 
 const statusIcon = {
     CLASSIFIED: FileLock,
@@ -16,9 +11,14 @@ const statusIcon = {
     'UNDER REVIEW': Folder,
 };
 
-export default function MobileFileCard({ file, index, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
+// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line no-unused-vars
+export default function MobileFileCard({ file, index, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
+    const [showReports, setShowReports] = useState(false);
+
+    const commentCount = file.commentCount || 0;
 
     const handleDoubleClick = async () => {
         if (!file.downloadURL) return;
@@ -48,13 +48,14 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
     };
 
     return (
-        <div
-            className={`flex flex-col gap-3 p-4 border-b border-slate-800/60 transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
-            onDoubleClick={(e) => {
-                if (isDeleting) return;
-                handleDoubleClick(e);
-            }}
-        >
+        <div className="flex flex-col border-b border-slate-800/60">
+            <div
+                className={`flex flex-col gap-3 p-4 transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+                onDoubleClick={(e) => {
+                    if (isDeleting) return;
+                    handleDoubleClick(e);
+                }}
+            >
             {/* Header: Name and Status */}
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -66,20 +67,34 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                             href={file.downloadURL}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 min-w-0 hover:underline decoration-doj-gold underline-offset-4"
+                            className="flex items-start gap-2 min-w-0 hover:underline decoration-doj-gold underline-offset-4"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <Icon className="w-4 h-4 text-doj-gold shrink-0" />
-                            <span className="text-sm font-mono text-doj-gold truncate block">
-                                {file.name}
-                            </span>
+                            <Icon className="w-4 h-4 text-doj-gold shrink-0 mt-0.5" />
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-mono text-doj-gold truncate block">
+                                    {file.name}
+                                </span>
+                                {file.uploaderUsername && (
+                                    <span className="text-[10px] font-mono text-slate-500 truncate">
+                                        BY: {file.uploaderUsername.toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
                         </a>
                     ) : (
-                        <div className="flex items-center gap-2 min-w-0">
-                            <Icon className="w-4 h-4 text-slate-500 shrink-0" />
-                            <span className="text-sm font-mono text-slate-300 truncate block">
-                                {file.name}
-                            </span>
+                        <div className="flex items-start gap-2 min-w-0">
+                            <Icon className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-mono text-slate-300 truncate block">
+                                    {file.name}
+                                </span>
+                                {file.uploaderUsername && (
+                                    <span className="text-[10px] font-mono text-slate-500 truncate">
+                                        BY: {file.uploaderUsername.toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -88,20 +103,12 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                 </div>
             </div>
 
-            {/* Middle row: Date, Size, Status */}
-            <div className="grid grid-cols-2 gap-2 mt-1">
-                <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase">Suspect</span>
-                    <span className="text-xs font-mono text-slate-300 truncate" title={file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}>
-                        {file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}
-                    </span>
-                </div>
-                <div className="flex flex-col gap-1 items-end">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase">Status</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono tracking-wider whitespace-nowrap ${statusBadge[file.status]}`}>
-                        {file.status}
-                    </span>
-                </div>
+            {/* Middle row: Suspect full width */}
+            <div className="flex flex-col gap-1 mt-1">
+                <span className="text-[10px] font-mono text-slate-500 uppercase">Suspect</span>
+                <span className="text-xs font-mono text-slate-300 truncate" title={file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}>
+                    {file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}
+                </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -121,6 +128,18 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
 
             {/* Bottom Row: Redacted Box & Action */}
             <div className="flex items-center justify-between gap-3 mt-2">
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowReports(!showReports);
+                    }}
+                    className="flex items-center justify-center p-2 rounded border border-slate-800/60 bg-slate-900/40 text-slate-500 hover:text-doj-gold transition-all outline-none"
+                    title="Toggle Intel Reports"
+                >
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="ml-1.5 text-xs font-mono">{commentCount}</span>
+                </button>
                 <button
                     type="button"
                     onClick={(e) => {
@@ -159,6 +178,14 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                     <RedactedBox text={file.redactedText} onRedactedClick={onRedactedClick} />
                 </div>
             </div>
+            </div>
+            {showReports && (
+                <IntelReportPanel
+                    file={file}
+                    user={user}
+                    userProfile={userProfile}
+                />
+            )}
         </div>
     );
 }
