@@ -1,6 +1,8 @@
-import { Folder, FileLock, Trash2, Loader2, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+import { Folder, FileLock, Trash2, Loader2, ShieldAlert, MessageSquare } from 'lucide-react';
 import RedactedBox from './RedactedBox';
 import VoteButtons from './VoteButtons';
+import IntelReportPanel from './IntelReportPanel';
 
 const statusBadge = {
     CLASSIFIED: 'badge-classified',
@@ -16,9 +18,12 @@ const statusIcon = {
     'UNDER REVIEW': Folder,
 };
 
+// eslint-disable-next-line no-unused-vars
 export default function FileRow({ file, index, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
+    const [showReports, setShowReports] = useState(false);
+    const [commentCount, setCommentCount] = useState(0);
 
     const handleDoubleClick = async () => {
         if (!file.downloadURL) return;
@@ -48,14 +53,15 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
     };
 
     return (
-        <div
-            className={`file-row grid grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 border-b border-slate-800/60 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
-            onDoubleClick={(e) => {
-                if (isDeleting) return;
-                handleDoubleClick(e);
-            }}
-            title={file.downloadURL ? "Double-click to download" : undefined}
-        >
+        <div className="flex flex-col border-b border-slate-800/60">
+            <div
+                className={`file-row grid grid-cols-[40px_60px_1fr_120px_100px_120px_180px] lg:grid-cols-[40px_60px_1fr_120px_120px_120px_220px] gap-2 items-center px-4 sm:px-6 py-3 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+                onDoubleClick={(e) => {
+                    if (isDeleting) return;
+                    handleDoubleClick(e);
+                }}
+                title={file.downloadURL ? "Double-click to download" : undefined}
+            >
             {/* Index */}
             <div className="text-xs font-mono text-slate-600">
                 {String(fileNumber).padStart(3, '0')}
@@ -119,6 +125,18 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
                 <button
                     type="button"
                     onClick={(e) => {
+                        e.stopPropagation();
+                        setShowReports(!showReports);
+                    }}
+                    className="flex items-center gap-1.5 text-slate-500 hover:text-doj-gold font-mono text-xs transition-colors shrink-0 outline-none"
+                    title="Toggle Intel Reports"
+                >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>{commentCount}</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         if (isOwner && !isDeleting) onDelete(file);
@@ -156,6 +174,14 @@ export default function FileRow({ file, index, fileNumber, onRedactedClick, user
                 >
                     <RedactedBox text={file.redactedText} onRedactedClick={onRedactedClick} />
                 </div>
+            </div>
+            </div>
+            <div className={showReports ? 'block' : 'hidden'}>
+                <IntelReportPanel
+                    file={file}
+                    user={user}
+                    onCountChange={setCommentCount}
+                />
             </div>
         </div>
     );

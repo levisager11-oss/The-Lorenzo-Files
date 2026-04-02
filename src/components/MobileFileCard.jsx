@@ -1,6 +1,8 @@
-import { Folder, FileLock, Trash2, Loader2, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+import { Folder, FileLock, Trash2, Loader2, ShieldAlert, MessageSquare } from 'lucide-react';
 import RedactedBox from './RedactedBox';
 import VoteButtons from './VoteButtons';
+import IntelReportPanel from './IntelReportPanel';
 
 const statusBadge = {
     CLASSIFIED: 'badge-classified',
@@ -16,9 +18,12 @@ const statusIcon = {
     'UNDER REVIEW': Folder,
 };
 
+// eslint-disable-next-line no-unused-vars
 export default function MobileFileCard({ file, index, fileNumber, onRedactedClick, user, onDelete, isDeleting }) {
     const Icon = statusIcon[file.status] || Folder;
     const isOwner = file.uploadedById === user?.uid;
+    const [showReports, setShowReports] = useState(false);
+    const [commentCount, setCommentCount] = useState(0);
 
     const handleDoubleClick = async () => {
         if (!file.downloadURL) return;
@@ -48,13 +53,14 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
     };
 
     return (
-        <div
-            className={`flex flex-col gap-3 p-4 border-b border-slate-800/60 transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
-            onDoubleClick={(e) => {
-                if (isDeleting) return;
-                handleDoubleClick(e);
-            }}
-        >
+        <div className="flex flex-col border-b border-slate-800/60">
+            <div
+                className={`flex flex-col gap-3 p-4 transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
+                onDoubleClick={(e) => {
+                    if (isDeleting) return;
+                    handleDoubleClick(e);
+                }}
+            >
             {/* Header: Name and Status */}
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -124,6 +130,18 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                 <button
                     type="button"
                     onClick={(e) => {
+                        e.stopPropagation();
+                        setShowReports(!showReports);
+                    }}
+                    className="flex items-center justify-center p-2 rounded border border-slate-800/60 bg-slate-900/40 text-slate-500 hover:text-doj-gold transition-all outline-none"
+                    title="Toggle Intel Reports"
+                >
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="ml-1.5 text-xs font-mono">{commentCount}</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         if (isOwner && !isDeleting) onDelete(file);
@@ -158,6 +176,14 @@ export default function MobileFileCard({ file, index, fileNumber, onRedactedClic
                 >
                     <RedactedBox text={file.redactedText} onRedactedClick={onRedactedClick} />
                 </div>
+            </div>
+            </div>
+            <div className={showReports ? 'block' : 'hidden'}>
+                <IntelReportPanel
+                    file={file}
+                    user={user}
+                    onCountChange={setCommentCount}
+                />
             </div>
         </div>
     );
