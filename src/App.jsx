@@ -574,6 +574,7 @@ export default function App() {
         user={user}
         files={files}
         onResetSecurity={() => { setSecurityLevel(0); setBreached(false); }}
+        onSetSecurityLevel={(lvl) => { setSecurityLevel(lvl); if (lvl > 3) setBreached(true); else setBreached(false); }}
         onTriggerBreach={() => setBreached(true)}
         devBypassUploadLimit={devBypassUploadLimit}
         onSetDevBypassUploadLimit={setDevBypassUploadLimit}
