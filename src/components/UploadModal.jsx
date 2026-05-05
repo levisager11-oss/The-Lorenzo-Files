@@ -1,6 +1,21 @@
-import { X, FileText, AlertTriangle, Search, User, Check } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { participantNames } from '../data/names';
+
+const XIcon = () => (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+);
+const CheckIcon = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 13 4 10" />
+    </svg>
+);
+const SearchIcon = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+);
 
 export default function UploadModal({ file, onClose, onConfirm }) {
     const [context, setContext] = useState('');
@@ -10,22 +25,11 @@ export default function UploadModal({ file, onClose, onConfirm }) {
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
 
-    // Auto-focus the input on mount
+    useEffect(() => { inputRef.current?.focus(); }, []);
     useEffect(() => {
-        if (inputRef.current) {
-            inputRef.current.focus();
-        }
-    }, []);
-
-    // Close dropdown on click outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setShowNameList(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        const h = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowNameList(false); };
+        document.addEventListener('mousedown', h);
+        return () => document.removeEventListener('mousedown', h);
     }, []);
 
     const handleSubmit = (e) => {
@@ -35,172 +39,125 @@ export default function UploadModal({ file, onClose, onConfirm }) {
     };
 
     const toggleSuspect = (name) => {
-        setSuspectNames(prev => 
-            prev.includes(name) 
-                ? prev.filter(n => n !== name) 
-                : [...prev, name]
-        );
+        setSuspectNames(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
     };
 
-    const filteredNames = participantNames.filter(name =>
-        name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredNames = participantNames.filter(name => name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const canSubmit = suspectNames.length > 0 && context.trim();
 
     if (!file) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md px-4">
+        <div
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+            onClick={onClose}
+        >
             <div
-                className="bg-slate-900 border-2 border-slate-700/50 rounded-xl shadow-2xl shadow-black max-w-lg w-full overflow-hidden animate-in fade-in scale-in-95 duration-300"
+                className="slide-up glass-card hud-corners"
+                onClick={e => e.stopPropagation()}
+                style={{ maxWidth: 520, width: '100%', borderRadius: 4, boxShadow: '0 0 60px rgba(0,212,255,0.35), 0 24px 80px rgba(0,0,0,0.9)', overflow: 'visible' }}
             >
+                <div className="hud-br" />
+                <div className="top-bar" />
+
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 bg-slate-800/80 border-b border-slate-700/50">
-                    <div className="flex items-center gap-3">
-                        <AlertTriangle className="w-5 h-5 text-doj-gold animate-pulse" />
-                        <h3 className="font-mono text-doj-gold text-sm tracking-widest font-semibold uppercase">
-                            Evidence Acquisition Protocol
-                        </h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(0,212,255,0.12)', background: 'rgba(0,212,255,0.03)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, color: '#00d4ff', letterSpacing: '0.15em' }}>EVIDENCE ACQUISITION PROTOCOL</span>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-slate-400 hover:text-white transition-colors p-1"
-                    >
-                        <X className="w-5 h-5" />
+                    <button onClick={onClose} style={{ background: 'transparent', color: '#7aa8cc', padding: 4, border: 'none', cursor: 'pointer', transition: 'color 150ms' }} onMouseOver={e => e.currentTarget.style.color = '#dceeff'} onMouseOut={e => e.currentTarget.style.color = '#7aa8cc'}>
+                        <XIcon />
                     </button>
                 </div>
 
-                {/* Body */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    <div className="bg-slate-950/50 rounded-lg p-4 flex items-start gap-4 border border-slate-800/50">
-                        <FileText className="w-8 h-8 text-doj-gold shrink-0 mt-1 opacity-80" />
-                        <div className="min-w-0">
-                            <p className="font-mono text-[10px] text-slate-500 mb-1 uppercase tracking-tighter">TARGET FILE SOURCE</p>
-                            <p className="font-mono text-sm text-slate-200 truncate font-medium" title={file.name}>
-                                {file.name}
-                            </p>
-                            <p className="font-mono text-[10px] text-slate-400 mt-1">
-                                BYTES: {file.size.toLocaleString()}
-                            </p>
+                <form onSubmit={handleSubmit} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {/* File info */}
+                    <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: 3, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(0,212,255,0.6)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: 8, letterSpacing: '0.22em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 3 }}>TARGET FILE SOURCE</div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600, color: '#dceeff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 360 }}>{file.name}</div>
+                            <div style={{ fontSize: 9, color: '#3d5a78', marginTop: 2, fontFamily: 'var(--font-mono)' }}>BYTES: {file.size?.toLocaleString()}</div>
                         </div>
                     </div>
 
-                    {/* Suspect Name Selection */}
-                    <div className="space-y-2 relative" ref={dropdownRef}>
-                        <label className="block font-mono text-xs text-slate-400 tracking-wider uppercase">
-                            Target Suspect:
-                        </label>
-                        <div className="relative">
-                            <div
-                                onClick={() => setShowNameList(true)}
-                                className={`w-full bg-slate-800/50 border ${suspectNames.length > 0 ? 'border-doj-gold/40' : 'border-slate-700'} rounded-lg p-3 font-mono text-sm cursor-pointer transition-all hover:bg-slate-800/80 min-h-[46px] flex flex-wrap gap-2 items-center`}
-                            >
-                                {suspectNames.length === 0 && (
-                                    <div className="flex items-center gap-2">
-                                        <User className="w-4 h-4 text-slate-500" />
-                                        <span className="text-slate-500 uppercase">Select Subjects...</span>
-                                    </div>
-                                )}
-                                {suspectNames.map(name => (
-                                    <span 
-                                        key={name} 
-                                        className="flex items-center gap-1.5 px-2 py-1 bg-doj-gold/10 border border-doj-gold/30 rounded text-[10px] text-doj-gold uppercase tracking-tighter"
-                                    >
-                                        {name}
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSuspectNames(prev => prev.filter(n => n !== name));
-                                            }}
-                                            className="hover:text-white transition-colors"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-
-                            {showNameList && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border-2 border-slate-700 rounded-lg shadow-2xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <div className="p-2 border-b border-slate-700 bg-slate-900/50 flex items-center gap-2">
-                                        <Search className="w-4 h-4 text-slate-500" />
-                                        <input
-                                            type="text"
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            placeholder="SEARCH SUSPECT..."
-                                            className="bg-transparent border-none focus:ring-0 text-xs font-mono text-slate-200 w-full placeholder:text-slate-600"
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                                        {filteredNames.length > 0 ? (
-                                            filteredNames.map(name => {
-                                                const isSelected = suspectNames.includes(name);
-                                                return (
-                                                    <div
-                                                        key={name}
-                                                        onClick={() => {
-                                                            toggleSuspect(name);
-                                                        }}
-                                                        className={`px-4 py-2.5 font-mono text-xs cursor-pointer hover:bg-slate-700/50 transition-colors flex items-center justify-between ${isSelected ? 'bg-doj-gold/10 text-doj-gold' : 'text-slate-300 hover:text-white'}`}
-                                                    >
-                                                        {name}
-                                                        {isSelected && <Check className="w-3 h-3" />}
-                                                    </div>
-                                                );
-                                            })
-                                        ) : (
-                                            <div className="px-4 py-4 font-mono text-[10px] text-red-500/70 text-center uppercase tracking-widest">
-                                                NO CLEARANCE FOUND
-                                            </div>
-                                        )}
-                                    </div>
+                    {/* Suspect selector */}
+                    <div style={{ position: 'relative' }} ref={dropdownRef}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.22em', color: '#7aa8cc', textTransform: 'uppercase', marginBottom: 6 }}>TARGET SUSPECT(S)</div>
+                        <div
+                            onClick={() => setShowNameList(v => !v)}
+                            style={{
+                                background: 'rgba(0,0,0,0.4)', border: `1px solid ${suspectNames.length > 0 ? 'rgba(0,212,255,0.28)' : 'rgba(0,212,255,0.12)'}`,
+                                borderRadius: 3, padding: '10px 12px', cursor: 'pointer',
+                                minHeight: 46, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center',
+                                transition: 'border-color 150ms',
+                            }}
+                        >
+                            {suspectNames.length === 0 && <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: '#3d5a78', letterSpacing: '0.08em' }}>SELECT SUBJECTS...</span>}
+                            {suspectNames.map(n => (
+                                <span key={n} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.28)', borderRadius: 2, padding: '2px 8px', fontFamily: 'var(--font-display)', fontSize: 9, color: '#00d4ff', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                                    {n}
+                                    <button type="button" onClick={e => { e.stopPropagation(); toggleSuspect(n); }} style={{ background: 'transparent', color: '#00d4ff', padding: 0, border: 'none', cursor: 'pointer', lineHeight: 1, display: 'flex' }}>
+                                        <XIcon />
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                        {showNameList && (
+                            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'rgba(12,20,32,0.9)', border: '1px solid rgba(0,212,255,0.28)', borderRadius: 4, boxShadow: '0 16px 48px rgba(0,0,0,0.8)', zIndex: 200, overflow: 'hidden' }}>
+                                <div style={{ padding: '8px 10px', borderBottom: '1px solid rgba(0,212,255,0.12)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.5)' }}>
+                                    <SearchIcon />
+                                    <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH SUSPECT..." autoFocus
+                                        style={{ background: 'transparent', border: 'none', fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.08em', color: '#dceeff', flex: 1, boxShadow: 'none', outline: 'none' }} />
                                 </div>
-                            )}
-                        </div>
+                                <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                                    {filteredNames.map(n => {
+                                        const sel = suspectNames.includes(n);
+                                        return (
+                                            <div key={n} onClick={() => toggleSuspect(n)}
+                                                style={{ padding: '9px 14px', fontFamily: 'var(--font-display)', fontSize: 11, cursor: 'pointer', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: sel ? 'rgba(0,212,255,0.08)' : 'transparent', color: sel ? '#00d4ff' : '#7aa8cc', transition: 'all 100ms' }}
+                                                onMouseOver={e => { if (!sel) { e.currentTarget.style.background = 'rgba(0,212,255,0.05)'; e.currentTarget.style.color = '#dceeff'; }}}
+                                                onMouseOut={e => { if (!sel) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#7aa8cc'; }}}
+                                            >
+                                                {n}{sel && <CheckIcon />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center mb-1">
-                            <label htmlFor="context-input" className="block font-mono text-xs text-slate-400 tracking-wider uppercase">
-                                Classified intel context:
-                            </label>
-                            <span className={`font-mono text-[10px] tabular-nums ${context.length >= 35 ? 'text-red-500' : 'text-slate-500'}`}>
-                                [{context.length.toString().padStart(2, '0')} / 35]
-                            </span>
+                    {/* Context */}
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.22em', color: '#7aa8cc', textTransform: 'uppercase' }}>CLASSIFIED INTEL CONTEXT</div>
+                            <span style={{ fontSize: 9, color: context.length >= 35 ? '#ff2d55' : '#3d5a78', fontFamily: 'var(--font-mono)' }}>[{String(context.length).padStart(2, '0')}/35]</span>
                         </div>
                         <textarea
-                            id="context-input"
-                            ref={inputRef}
-                            value={context}
-                            onChange={(e) => setContext(e.target.value)}
-                            maxLength={35}
-                            placeholder="REDACTED DETAILS..."
-                            className="w-full h-24 bg-slate-800/50 border border-slate-700 rounded-lg p-3 font-mono text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-doj-gold focus:ring-1 focus:ring-doj-gold transition-colors resize-none"
-                            required
+                            ref={inputRef} value={context} onChange={e => setContext(e.target.value)}
+                            maxLength={35} placeholder="REDACTED DETAILS..." required
+                            style={{ width: '100%', height: 76, padding: '10px 12px', borderRadius: 3, fontSize: 11, letterSpacing: '0.04em', resize: 'none', lineHeight: 1.5 }}
                         />
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 font-mono text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase"
-                        >
-                            Abort
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 4 }}>
+                        <button type="button" onClick={onClose}
+                            style={{ background: 'transparent', color: '#7aa8cc', padding: '8px 16px', borderRadius: 3, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)', transition: 'color 150ms' }}
+                            onMouseOver={e => e.currentTarget.style.color = '#dceeff'} onMouseOut={e => e.currentTarget.style.color = '#7aa8cc'}>
+                            ABORT
                         </button>
-                        <button
-                            type="submit"
-                            disabled={suspectNames.length === 0 || !context.trim()}
-                            className={`font-mono text-xs font-bold px-6 py-2.5 rounded border transition-all tracking-widest uppercase shadow-lg select-none ${
-                                suspectNames.length === 0 || !context.trim()
-                                    ? 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'
-                                    : 'bg-doj-gold text-slate-950 border-doj-gold hover:bg-yellow-500 hover:border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)] active:scale-95'
-                            }`}
-                        >
-                            Authorize
+                        <button type="submit" disabled={!canSubmit}
+                            style={{ background: '#00d4ff', color: '#020608', padding: '8px 20px', borderRadius: 3, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', fontWeight: 700, opacity: canSubmit ? 1 : 0.35, transition: 'all 150ms' }}
+                            onMouseOver={e => { if (canSubmit) e.currentTarget.style.boxShadow = '0 0 24px rgba(0,212,255,0.35)'; }}
+                            onMouseOut={e => e.currentTarget.style.boxShadow = 'none'}>
+                            AUTHORIZE
                         </button>
                     </div>
                 </form>

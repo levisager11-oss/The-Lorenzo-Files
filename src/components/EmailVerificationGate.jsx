@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Mail, RefreshCw, LogOut, AlertTriangle } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { sendEmailVerification, signOut } from 'firebase/auth';
+import RadarSeal from './RadarSeal';
 
 export default function EmailVerificationGate({ user, setUser }) {
     const [statusMsg, setStatusMsg] = useState('');
-    const [statusType, setStatusType] = useState(''); // 'info' | 'error'
+    const [statusType, setStatusType] = useState('');
 
     const handleResendVerification = async () => {
         setStatusMsg('');
@@ -15,19 +15,13 @@ export default function EmailVerificationGate({ user, setUser }) {
             setStatusMsg('VERIFICATION LINK RE-TRANSMITTED. CHECK YOUR EMAIL.');
         } catch (err) {
             setStatusType('error');
-            if (err.code === 'auth/too-many-requests') {
-                setStatusMsg('TOO MANY REQUESTS. TRY AGAIN LATER.');
-            } else {
-                setStatusMsg('UNABLE TO SEND VERIFICATION. TRY AGAIN LATER.');
-            }
+            setStatusMsg(err.code === 'auth/too-many-requests' ? 'TOO MANY REQUESTS. TRY AGAIN LATER.' : 'UNABLE TO SEND VERIFICATION. TRY AGAIN LATER.');
         }
     };
 
     const handleRefreshStatus = async () => {
         setStatusMsg('');
         try {
-            // reload() updates the current user's profile data from the server
-            // but does NOT trigger onAuthStateChanged, so we must manually update state
             await auth.currentUser.reload();
             if (auth.currentUser.emailVerified) {
                 setUser({ ...auth.currentUser });
@@ -41,74 +35,71 @@ export default function EmailVerificationGate({ user, setUser }) {
         }
     };
 
-    const handleSignOut = () => {
-        signOut(auth).catch(console.error);
-    };
+    const handleSignOut = () => { signOut(auth).catch(console.error); };
 
     return (
-        <div className="relative min-h-screen bg-[#0a0e1a] flex items-center justify-center font-mono overflow-hidden">
-            <div className="absolute inset-0 scanlines pointer-events-none opacity-20" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900/50 via-[#0a0e1a] to-[#0a0e1a] pointer-events-none" />
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, position: 'relative' }}>
+            <div className="slide-up" style={{ width: '100%', maxWidth: 440, position: 'relative' }}>
+                <div style={{ position: 'absolute', inset: -1, borderRadius: 4, border: '1px solid rgba(0,212,255,0.28)', boxShadow: '0 0 60px rgba(0,212,255,0.35)', pointerEvents: 'none' }} />
+                <div className="hud-corners" style={{ borderRadius: 4, overflow: 'hidden' }}>
+                    <div className="hud-br" />
+                    <div style={{ background: 'rgba(5,8,14,0.95)', backdropFilter: 'blur(24px)' }}>
+                        <div className="top-bar" />
+                        <div style={{ padding: '36px 36px 28px', textAlign: 'center' }}>
+                            <div style={{ position: 'relative', display: 'inline-flex', marginBottom: 20 }}>
+                                <div style={{ width: 72, height: 72, borderRadius: '50%', border: '2px solid #00d4ff', background: 'rgba(0,212,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(0,212,255,0.35)' }}>
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+                                    </svg>
+                                </div>
+                                <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: '1px solid #00d4ff', opacity: 0.2 }} className="ping-ring" />
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: '#00d4ff', letterSpacing: '0.15em', textShadow: '0 0 20px rgba(0,212,255,0.35)', marginBottom: 6 }}>EMAIL VERIFICATION REQUIRED</div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.4em', color: '#7aa8cc', marginBottom: 24, textTransform: 'uppercase' }}>DEPARTMENT OF LORENZO // DELOS SYSTEM</div>
 
-            <div className="relative z-10 w-full max-w-md p-8 border-2 border-doj-gold/30 bg-[#0a0e1a]/80 backdrop-blur-md shadow-2xl shadow-doj-gold/10 rounded-lg text-center">
-                <div className="flex flex-col items-center mb-6">
-                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-doj-gold bg-[#0a0e1a] shadow-[0_0_20px_rgba(245,158,11,0.2)] mb-4">
-                        <Mail className="w-10 h-10 text-doj-gold" />
-                        <div className="absolute inset-0 rounded-full border border-doj-gold/50 animate-ping opacity-20" />
+                            <div style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.28)', borderRadius: 4, padding: '14px 16px', marginBottom: 16, textAlign: 'left' }}>
+                                <div style={{ fontSize: 11, color: '#7aa8cc', lineHeight: 1.7, fontFamily: 'var(--font-mono)' }}>
+                                    A verification link has been transmitted to{' '}
+                                    <span style={{ color: '#00d4ff', fontWeight: 600 }}>{user?.email || 'your email'}</span>.{' '}
+                                    Confirm your identity to gain archive access.
+                                </div>
+                            </div>
+
+                            {statusMsg && (
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+                                    border: `1px solid ${statusType === 'error' ? 'rgba(255,45,85,0.4)' : 'rgba(0,212,255,0.28)'}`,
+                                    background: statusType === 'error' ? 'rgba(255,45,85,0.1)' : 'rgba(0,212,255,0.08)',
+                                    borderRadius: 3, marginBottom: 16,
+                                    fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.1em',
+                                    color: statusType === 'error' ? '#ff2d55' : '#00d4ff', textAlign: 'left',
+                                }}>
+                                    {statusMsg}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <button onClick={handleRefreshStatus}
+                                    style={{ width: '100%', padding: '12px', borderRadius: 3, background: '#00d4ff', color: '#020608', border: 'none', fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 150ms' }}
+                                    onMouseOver={e => e.currentTarget.style.boxShadow = '0 0 24px rgba(0,212,255,0.35)'}
+                                    onMouseOut={e => e.currentTarget.style.boxShadow = 'none'}>
+                                    I&apos;VE VERIFIED — CHECK STATUS
+                                </button>
+                                <button onClick={handleResendVerification}
+                                    style={{ width: '100%', padding: '11px', borderRadius: 3, background: 'transparent', border: '1px solid rgba(0,212,255,0.28)', color: '#7aa8cc', fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 150ms' }}
+                                    onMouseOver={e => { e.currentTarget.style.borderColor = '#00d4ff'; e.currentTarget.style.color = '#00d4ff'; }}
+                                    onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(0,212,255,0.28)'; e.currentTarget.style.color = '#7aa8cc'; }}>
+                                    RESEND VERIFICATION EMAIL
+                                </button>
+                                <button onClick={handleSignOut}
+                                    style={{ width: '100%', padding: '10px', borderRadius: 3, background: 'rgba(255,45,85,0.1)', color: '#ff2d55', border: '1px solid rgba(255,45,85,0.25)', fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 150ms' }}
+                                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.18)'; e.currentTarget.style.borderColor = '#ff2d55'; }}
+                                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,45,85,0.25)'; }}>
+                                    SIGN OUT
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <h1 className="text-xl font-bold tracking-widest text-doj-gold uppercase">
-                        EMAIL VERIFICATION REQUIRED
-                    </h1>
-                    <p className="text-xs tracking-[0.2em] text-slate-500 mt-2 uppercase">
-                        Department of Lorenzo
-                    </p>
-                </div>
-
-                <div className="p-4 border border-doj-gold/30 bg-doj-gold/5 rounded mb-6">
-                    <p className="text-sm text-slate-300 leading-relaxed">
-                        A verification link has been sent to{' '}
-                        <span className="text-doj-gold font-bold">{user.email}</span>.
-                        <br />
-                        Confirm your identity to gain access.
-                    </p>
-                </div>
-
-                {statusMsg && (
-                    <div className={`flex items-center gap-2 p-3 rounded mb-4 text-xs tracking-widest ${
-                        statusType === 'error'
-                            ? 'border border-red-500/50 bg-red-500/10 text-red-500'
-                            : 'border border-doj-gold/50 bg-doj-gold/10 text-doj-gold'
-                    }`}>
-                        {statusType === 'error'
-                            ? <AlertTriangle className="w-4 h-4 shrink-0" />
-                            : <Mail className="w-4 h-4 shrink-0" />
-                        }
-                        <p>{statusMsg}</p>
-                    </div>
-                )}
-
-                <div className="space-y-3">
-                    <button
-                        onClick={handleRefreshStatus}
-                        className="w-full flex items-center justify-center gap-2 bg-doj-gold hover:bg-yellow-500 text-slate-950 font-bold py-3 rounded uppercase tracking-[0.2em] text-xs transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] active:scale-[0.98]"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                        I&apos;VE VERIFIED — CHECK STATUS
-                    </button>
-                    <button
-                        onClick={handleResendVerification}
-                        className="w-full flex items-center justify-center gap-2 bg-transparent border border-doj-gold/50 text-doj-gold hover:bg-doj-gold/10 font-bold py-3 rounded uppercase tracking-[0.2em] text-xs transition-all active:scale-[0.98]"
-                    >
-                        <Mail className="w-4 h-4" />
-                        RESEND VERIFICATION EMAIL
-                    </button>
-                    <button
-                        onClick={handleSignOut}
-                        className="w-full flex items-center justify-center gap-2 bg-transparent border border-slate-700 text-slate-500 hover:text-red-400 hover:border-red-500/50 font-bold py-3 rounded uppercase tracking-[0.2em] text-xs transition-all active:scale-[0.98]"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        SIGN OUT
-                    </button>
                 </div>
             </div>
         </div>

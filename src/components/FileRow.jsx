@@ -1,187 +1,148 @@
 import { useState } from 'react';
-import { Folder, FileLock, Trash2, Loader2, ShieldAlert, MessageSquare } from 'lucide-react';
 import RedactedBox from './RedactedBox';
 import VoteButtons from './VoteButtons';
 import IntelReportPanel from './IntelReportPanel';
 
-const statusIcon = {
-    CLASSIFIED: FileLock,
-    SEALED: FileLock,
-    REDACTED: FileLock,
-    'UNDER REVIEW': Folder,
+const statusBadgeClass = {
+    CLASSIFIED: 'badge-classified',
+    SEALED: 'badge-sealed',
+    REDACTED: 'badge-redacted',
+    'UNDER REVIEW': 'badge-review',
 };
 
-// eslint-disable-next-line no-unused-vars
-// eslint-disable-next-line no-unused-vars
-export default function FileRow({ file, index, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
-    const Icon = statusIcon[file.status] || Folder;
-    const isOwner = file.uploadedById === user?.uid;
+export default function FileRow({ file, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
     const [showReports, setShowReports] = useState(false);
-
+    const isOwner = file.uploadedById === user?.uid;
+    const badgeClass = statusBadgeClass[file.status] || 'badge-redacted';
     const commentCount = file.commentCount || 0;
+    const fileNum = String(fileNumber).padStart(3, '0');
+    const suspects = (file.suspectNames || (file.suspectName ? [file.suspectName] : ['Lorenzo'])).join(', ');
 
-    const handleDoubleClick = async () => {
+    const handleDownload = async () => {
         if (!file.downloadURL) return;
-
         try {
-            // Fetch the file as a Blob
             const response = await fetch(file.downloadURL);
             const blob = await response.blob();
-
-            // Create a temporary Blob URL
             const blobUrl = window.URL.createObjectURL(blob);
-
-            // Create a hidden anchor to force download
             const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = file.name;
-            document.body.appendChild(a);
-            a.click();
-
-            // Cleanup
+            a.href = blobUrl; a.download = file.name;
+            document.body.appendChild(a); a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(blobUrl);
-        } catch (error) {
-            console.error("Error downloading file:", error);
-            alert("Failed to download the file.");
-        }
+        } catch { /* ignore */ }
     };
 
     return (
-        <div className="flex flex-col border-b border-slate-800/60">
+        <div className="glass-card fade-in" style={{ borderRadius: 0, borderLeft: 'none', borderRight: 'none', borderTop: 'none' }}>
             <div
-                className={`file-row grid grid-cols-[40px_60px_1fr_200px] sm:grid-cols-[40px_60px_1fr_100px_120px_240px] lg:grid-cols-[40px_60px_1fr_120px_140px_300px] gap-2 items-center px-4 sm:px-6 py-3 group cursor-pointer transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
-                onDoubleClick={(e) => {
-                    if (isDeleting) return;
-                    handleDoubleClick(e);
-                }}
-                title={file.downloadURL ? "Double-click to download" : undefined}
+                className="tbl-row"
+                style={{ opacity: isDeleting ? 0.3 : 1, transition: 'opacity 300ms', cursor: file.downloadURL ? 'pointer' : 'default' }}
+                onDoubleClick={handleDownload}
+                title={file.downloadURL ? 'Double-click to download' : undefined}
             >
-            {/* Index */}
-            <div className="text-xs font-mono text-slate-600">
-                {String(fileNumber).padStart(3, '0')}
-            </div>
+                {/* # */}
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: '#3d5a78', fontWeight: 600 }}>{fileNum}</div>
 
-            {/* Votes */}
-            <div className="flex justify-center items-center h-full">
-                <VoteButtons file={file} user={user} />
-            </div>
+                {/* Votes */}
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <VoteButtons file={file} user={user} />
+                </div>
 
-            {/* Icon + File Name */}
-            <div className="flex items-center min-w-0">
-                {file.downloadURL ? (
-                    <a
-                        href={file.downloadURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 min-w-0 hover:underline decoration-doj-gold underline-offset-4"
-                        title="Open in new tab"
-                        onClick={(e) => e.stopPropagation()} // Prevent double-click trigger when clicking link directly
-                    >
-                        <Icon className="w-4 h-4 text-doj-gold shrink-0 transition-colors" />
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-mono text-doj-gold truncate transition-colors block">
+                {/* File name */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><rect width="6" height="5" x="9" y="13" rx="1" /><path d="M10 13v-1a2 2 0 0 1 4 0v1" />
+                    </svg>
+                    <div style={{ minWidth: 0 }}>
+                        {file.downloadURL ? (
+                            <a
+                                href={file.downloadURL} target="_blank" rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                    fontFamily: 'var(--font-display)', fontSize: 13, color: '#00d4ff',
+                                    fontWeight: 600, letterSpacing: '0.05em', textDecoration: 'none',
+                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                    display: 'block', textShadow: '0 0 8px rgba(0,212,255,0.08)',
+                                }}
+                            >{file.name}</a>
+                        ) : (
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: '#dceeff', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {file.name}
                             </span>
-                            {file.uploaderUsername && (
-                                <span className="text-[10px] font-mono text-slate-500 truncate">
-                                    BY: {file.uploaderUsername.toUpperCase()}
-                                </span>
-                            )}
-                        </div>
-                    </a>
-                ) : (
-                    <div className="flex items-center gap-3 min-w-0">
-                        <Icon className="w-4 h-4 text-slate-500 shrink-0 group-hover:text-doj-gold transition-colors" />
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-mono text-slate-300 truncate group-hover:text-slate-100 transition-colors block">
-                                {file.name}
-                            </span>
-                            {file.uploaderUsername && (
-                                <span className="text-[10px] font-mono text-slate-500 truncate">
-                                    BY: {file.uploaderUsername.toUpperCase()}
-                                </span>
-                            )}
-                        </div>
+                        )}
+                        {file.uploaderUsername && (
+                            <div style={{ fontSize: 9, color: '#3d5a78', letterSpacing: '0.15em', marginTop: 1, fontFamily: 'var(--font-display)' }}>
+                                BY: {file.uploaderUsername.toUpperCase()}
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
+                </div>
 
-            {/* Suspect */}
-            <div className="hidden sm:flex items-center text-xs font-mono text-slate-400 min-w-0">
-                <span className="truncate block w-full" title={file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}>
-                    {file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}
-                </span>
-            </div>
+                {/* Suspect */}
+                <div style={{ fontSize: 10, color: '#7aa8cc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-display)' }} title={suspects}>
+                    {suspects}
+                </div>
 
-            {/* Date / Size */}
-            <div className="hidden sm:flex flex-col gap-0.5 text-xs font-mono text-slate-500 whitespace-nowrap">
-                <span>{file.date}</span>
-                <span className="text-slate-500">{file.size}</span>
-            </div>
+                {/* Date / Size */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 10, color: '#7aa8cc', fontFamily: 'var(--font-display)' }}>{file.date}</span>
+                    <span style={{ fontSize: 9, color: '#3d5a78', fontFamily: 'var(--font-mono)' }}>{file.size}</span>
+                </div>
 
-            {/* Action / Intel Area */}
-            <div className="flex justify-end items-center gap-2 sm:gap-4 min-w-0 w-full overflow-hidden">
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowReports(!showReports);
-                    }}
-                    className="flex items-center gap-1.5 text-slate-500 hover:text-doj-gold font-mono text-xs transition-colors shrink-0 outline-none"
-                    title="Toggle Intel Reports"
-                >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>{commentCount}</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (isOwner && !isDeleting) onDelete(file);
-                    }}
-                    disabled={!isOwner || isDeleting}
-                    className={`shrink-0 p-1.5 px-3 flex items-center gap-2 border rounded transition-all group/purge z-20 outline-none
-                        ${isDeleting 
-                            ? 'border-slate-700 bg-slate-800/50 text-slate-500 cursor-not-allowed' 
-                            : isOwner
-                                ? 'border-red-900/40 bg-red-950/20 text-red-500 hover:bg-red-900/40 hover:text-red-400 hover:scale-105 active:scale-95'
-                                : 'border-slate-800/60 bg-slate-900/40 text-slate-600 cursor-not-allowed'
-                        }`}
-                    title={
-                        isDeleting 
-                            ? "Purging record..." 
-                            : isOwner 
-                                ? "Purge from Archive" 
-                                : "OWNERSHIP UNVERIFIED - CANNOT PURGE"
-                    }
-                >
-                    {isDeleting ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : !isOwner ? (
-                        <ShieldAlert className="w-3.5 h-3.5 opacity-50" />
-                    ) : (
-                        <Trash2 className="w-3.5 h-3.5" />
-                    )}
-                    <span className="text-[10px] font-mono tracking-tighter hidden xl:block">
-                        {isDeleting ? 'PURGING...' : 'PURGE'}
-                    </span>
-                </button>
-                <div 
-                    onClick={(e) => e.stopPropagation()} 
-                    className={`min-w-0 overflow-hidden w-full flex justify-end transition-opacity ${isDeleting ? 'opacity-50' : 'opacity-100'}`}
-                >
+                {/* Intel (redacted + badge + comment button) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <RedactedBox text={file.redactedText} onRedactedClick={onRedactedClick} />
+                    <button
+                        onClick={e => { e.stopPropagation(); setShowReports(v => !v); }}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+                            background: showReports ? 'rgba(0,212,255,0.08)' : 'transparent',
+                            color: showReports ? '#00d4ff' : '#3d5a78',
+                            padding: '5px 8px', borderRadius: 2, fontSize: 9,
+                            border: `1px solid ${showReports ? 'rgba(0,212,255,0.28)' : 'rgba(0,212,255,0.12)'}`,
+                            transition: 'all 150ms', cursor: 'pointer',
+                        }}
+                        title="Toggle Intel Reports"
+                    >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <span>{commentCount}</span>
+                    </button>
+                </div>
+
+                {/* Action */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    {isOwner ? (
+                        <button
+                            onClick={e => { e.stopPropagation(); if (!isDeleting) onDelete(file); }}
+                            disabled={isDeleting}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 5,
+                                background: 'rgba(255,45,85,0.1)', color: '#ff2d55',
+                                border: '1px solid rgba(255,45,85,0.25)',
+                                padding: '5px 12px', borderRadius: 2, fontSize: 9,
+                                letterSpacing: '0.1em', textTransform: 'uppercase',
+                                cursor: isDeleting ? 'not-allowed' : 'pointer',
+                                transition: 'all 150ms', fontFamily: 'var(--font-display)', fontWeight: 600,
+                            }}
+                            onMouseOver={e => { if (!isDeleting) { e.currentTarget.style.background = 'rgba(255,45,85,0.18)'; e.currentTarget.style.borderColor = '#ff2d55'; }}}
+                            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,45,85,0.25)'; }}
+                        >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                            </svg>
+                            PURGE
+                        </button>
+                    ) : (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3d5a78" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                    )}
                 </div>
             </div>
-            </div>
             {showReports && (
-                <IntelReportPanel
-                    file={file}
-                    user={user}
-                    userProfile={userProfile}
-                />
+                <IntelReportPanel file={file} user={user} userProfile={userProfile} />
             )}
         </div>
     );

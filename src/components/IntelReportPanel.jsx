@@ -57,7 +57,7 @@ function CommentVoteButton({ fileId, report, user }) {
                 disabled={isVoting}
                 className={`p-1 rounded transition-colors ${
                     hasVoted
-                        ? 'text-doj-gold bg-doj-gold/10 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                        ? 'text-doj-gold bg-doj-gold/10 shadow-[0_0_10px_rgba(0,212,255,0.2)]'
                         : 'text-slate-500 hover:text-doj-gold hover:bg-slate-800'
                 }`}
             >
