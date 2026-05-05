@@ -149,7 +149,7 @@ html, body {
 /* ── Table ── */
 .tbl-head {
   display: grid;
-  grid-template-columns: 36px 52px 1fr 130px 110px 170px 100px;
+  grid-template-columns: 36px 52px 1fr 130px 110px 320px 100px;
   gap: 8px; align-items: center; padding: 8px 20px;
   background: rgba(0,212,255,0.03); border-bottom: 1px solid rgba(0,212,255,0.12);
   font-size: 9px; letter-spacing: 0.22em; color: #3d5a78;
@@ -157,7 +157,7 @@ html, body {
 }
 .tbl-row {
   display: grid;
-  grid-template-columns: 36px 52px 1fr 130px 110px 170px 100px;
+  grid-template-columns: 36px 52px 1fr 130px 110px 320px 100px;
   gap: 8px; align-items: center; padding: 11px 20px;
   border-bottom: 1px solid rgba(0,212,255,0.05);
   transition: background 150ms;
