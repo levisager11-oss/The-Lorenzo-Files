@@ -1,7 +1,4 @@
 import { useState, useEffect } from 'react';
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
-import { ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { voteOnFile } from '../lib/voteOnFile';
@@ -10,7 +7,6 @@ export default function VoteButtons({ file, user }) {
     const [myVote, setMyVote] = useState(null);
     const [isVoting, setIsVoting] = useState(false);
 
-    // Sync myVote from Firestore
     useEffect(() => {
         if (!user || !file.id) return;
         const ref = doc(db, "evidenceFiles", file.docId || file.id.toString(), "voters", user.uid);
@@ -27,54 +23,55 @@ export default function VoteButtons({ file, user }) {
             await voteOnFile(file.docId || file.id.toString(), user.uid, type);
         } catch (error) {
             console.error("Voting failed:", error);
-            // Re-throw or show alert depending on strictness
         } finally {
             setIsVoting(false);
         }
     };
 
-    const upvotes = file.upvotes || 0;
-    const downvotes = file.downvotes || 0;
-    const score = upvotes - downvotes;
-
-    // Determine color of the score
-    let scoreColor = 'text-slate-500';
-    if (score > 0) scoreColor = 'text-doj-gold';
-    if (score < 0) scoreColor = 'text-red-500';
+    const score = (file.upvotes || 0) - (file.downvotes || 0);
+    const scoreColor = score > 0 ? '#00d4ff' : score < 0 ? '#ff2d55' : '#7aa8cc';
 
     return (
-        <div className={`flex flex-col items-center justify-center gap-1 ${isVoting ? 'opacity-40 cursor-not-allowed' : ''}`}>
-            <motion.button
-                whileHover={!isVoting ? { scale: 1.2 } : {}}
-                whileTap={!isVoting ? { scale: 0.9 } : {}}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, opacity: isVoting ? 0.4 : 1 }}>
+            <button
                 onClick={(e) => { e.stopPropagation(); handleVote('up'); }}
                 disabled={isVoting}
-                className={`p-1 rounded transition-colors ${
-                    myVote === 'up' 
-                        ? 'text-doj-gold bg-doj-gold/10 shadow-[0_0_10px_rgba(245,158,11,0.2)]' 
-                        : 'text-slate-500 hover:text-doj-gold hover:bg-slate-800'
-                }`}
+                style={{
+                    background: myVote === 'up' ? 'rgba(0,212,255,0.08)' : 'transparent',
+                    color: myVote === 'up' ? '#00d4ff' : '#3d5a78',
+                    padding: '2px', borderRadius: 2, border: 'none',
+                    display: 'flex', alignItems: 'center', cursor: 'pointer',
+                    transition: 'all 150ms',
+                }}
+                onMouseOver={e => { if (myVote !== 'up') e.currentTarget.style.color = '#00d4ff'; }}
+                onMouseOut={e => { if (myVote !== 'up') e.currentTarget.style.color = '#3d5a78'; }}
             >
-                <ChevronUp className="w-5 h-5" strokeWidth={myVote === 'up' ? 3 : 2} />
-            </motion.button>
-            
-            <div className={`font-mono text-xs font-bold w-8 text-center flex items-center justify-center ${scoreColor}`}>
-                {isVoting ? <Loader2 className="w-3 h-3 animate-spin text-slate-400" /> : score}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={myVote === 'up' ? 2.5 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="18 15 12 9 6 15" />
+                </svg>
+            </button>
+
+            <div style={{ fontSize: 10, fontWeight: 700, minWidth: 20, textAlign: 'center', color: scoreColor, fontFamily: 'var(--font-mono)' }}>
+                {score}
             </div>
 
-            <motion.button
-                whileHover={!isVoting ? { scale: 1.2 } : {}}
-                whileTap={!isVoting ? { scale: 0.9 } : {}}
+            <button
                 onClick={(e) => { e.stopPropagation(); handleVote('down'); }}
                 disabled={isVoting}
-                className={`p-1 rounded transition-colors ${
-                    myVote === 'down' 
-                        ? 'text-red-500 bg-red-500/10 shadow-[0_0_10px_rgba(239,68,68,0.2)]' 
-                        : 'text-slate-500 hover:text-red-500 hover:bg-slate-800'
-                }`}
+                style={{
+                    background: myVote === 'down' ? 'rgba(255,45,85,0.1)' : 'transparent',
+                    color: myVote === 'down' ? '#ff2d55' : '#3d5a78',
+                    padding: '2px', borderRadius: 2, border: 'none',
+                    display: 'flex', alignItems: 'center', cursor: 'pointer',
+                    transition: 'all 150ms',
+                }}
+                onMouseOver={e => { if (myVote !== 'down') e.currentTarget.style.color = '#ff2d55'; }}
+                onMouseOut={e => { if (myVote !== 'down') e.currentTarget.style.color = '#3d5a78'; }}
             >
-                <ChevronDown className="w-5 h-5" strokeWidth={myVote === 'down' ? 3 : 2} />
-            </motion.button>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={myVote === 'down' ? 2.5 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </button>
         </div>
     );
 }

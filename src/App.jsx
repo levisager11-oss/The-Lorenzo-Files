@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
-import { AlertTriangle, Database, FileText, Upload, Loader2 } from 'lucide-react';
+import RadarSeal from './components/RadarSeal';
 import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
 import FileRow from './components/FileRow';
@@ -34,6 +32,43 @@ import EmailVerificationGate from './components/EmailVerificationGate';
 import DevMenu from './components/DevMenu';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+
+function LoadingScreen({ message }) {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+      <RadarSeal size={90} />
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 5vw, 3.5rem)', fontWeight: 700, color: '#00d4ff', letterSpacing: '0.25em', textShadow: '0 0 30px rgba(0,212,255,0.35)' }}>
+        THE LORENZO FILES
+      </div>
+      <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7aa8cc', textTransform: 'uppercase', fontFamily: 'var(--font-display)' }}>
+        {message} <span className="cursor-blink">█</span>
+      </div>
+    </div>
+  );
+}
+
+function ClassificationBanner() {
+  const [tick, setTick] = useState(true);
+  useEffect(() => { const t = setInterval(() => setTick(v => !v), 900); return () => clearInterval(t); }, []);
+  return (
+    <div style={{ background: 'rgba(255,45,85,0.05)', borderBottom: '1px solid rgba(255,45,85,0.15)', padding: '6px 0' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+        <span style={{ color: '#ff2d55', opacity: tick ? 1 : 0.3, transition: 'opacity 150ms' }}>◆</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.28em', color: 'rgba(255,45,85,0.9)', textTransform: 'uppercase' }}>
+          TOP SECRET — LORENZO EYES ONLY — CLASSIFICATION LEVEL: ULTRA — UNAUTHORIZED ACCESS IS A FEDERAL OFFENSE
+        </span>
+        <span style={{ color: '#ff2d55', opacity: tick ? 0.3 : 1, transition: 'opacity 150ms' }}>◆</span>
+      </div>
+    </div>
+  );
+}
+
+const selStyle = {
+  padding: '7px 32px 7px 12px', borderRadius: 3, fontSize: 9, letterSpacing: '0.12em',
+  fontFamily: 'var(--font-display)', fontWeight: 500,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235a7a9a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+  backgroundPosition: 'right 8px center', backgroundRepeat: 'no-repeat', backgroundSize: '13px',
+};
 
 // Helper to convert stored size values to bytes for sorting
 function parseSize(file) {
@@ -329,16 +364,7 @@ export default function App() {
   };
 
   if (authLoading) {
-    return (
-      <div className="relative min-h-screen bg-[#0a0e1a] font-sans flex items-center justify-center">
-        <div className="grain-overlay" />
-        <div className="scanlines" />
-        <div className="flex flex-col items-center gap-4 text-slate-500 font-mono">
-          <Loader2 className="w-8 h-8 animate-spin text-doj-gold" />
-          <p className="tracking-widest">AUTHENTICATING...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="AUTHENTICATING" />;
   }
 
   if (!user) {
@@ -350,16 +376,7 @@ export default function App() {
   }
 
   if (profileLoading) {
-    return (
-      <div className="relative min-h-screen bg-[#0a0e1a] font-sans flex items-center justify-center">
-        <div className="grain-overlay" />
-        <div className="scanlines" />
-        <div className="flex flex-col items-center gap-4 text-slate-500 font-mono">
-          <Loader2 className="w-8 h-8 animate-spin text-doj-gold" />
-          <p className="tracking-widest">LOADING AGENT PROFILE...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="LOADING AGENT PROFILE" />;
   }
 
   if (!userProfile) {
@@ -367,237 +384,122 @@ export default function App() {
   }
 
   if (loading) {
-    return (
-      <div className="relative min-h-screen bg-[#0a0e1a] font-sans flex items-center justify-center">
-        <div className="grain-overlay" />
-        <div className="scanlines" />
-        <div className="flex flex-col items-center gap-4 text-slate-500 font-mono">
-          <Loader2 className="w-8 h-8 animate-spin text-doj-gold" />
-          <p className="tracking-widest">ACCESSING CLOUD EVIDENCE ARCHIVE...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="ACCESSING CLOUD EVIDENCE ARCHIVE" />;
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-900 font-sans">
+    <div style={{ minHeight: '100vh', background: 'transparent' }}>
       <Analytics />
       <SpeedInsights />
-      {/* Grain overlay */}
-      <div className="grain-overlay" />
-      {/* Scanlines */}
-      <div className="scanlines" />
-      {/* CONFIDENTIAL watermark */}
-      <div className="watermark">
-        <span className="watermark-text">CONFIDENTIAL</span>
-      </div>
 
-      {/* Main content */}
       <div className="relative z-10">
-        <Header />
+        <Header username={userProfile?.username} />
 
         {/* Classification Banner */}
-        <div className="bg-red-950/40 border-y border-red-900/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-center gap-3">
-            <AlertTriangle className="w-4 h-4 text-red-400" />
-            <p className="text-xs font-mono text-red-400 tracking-widest">
-              TOP SECRET // LORENZO EYES ONLY // CLASSIFICATION LEVEL: ULTRA
-            </p>
-            <AlertTriangle className="w-4 h-4 text-red-400" />
-          </div>
-        </div>
+        <ClassificationBanner />
 
-        {/* Content Area */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main style={{ maxWidth: 1400, margin: '0 auto', padding: isMobile ? '16px 12px' : '28px 28px' }}>
           {/* Search */}
-          <div className="mb-8">
+          <div style={{ marginBottom: 24 }}>
             <SearchPortal query={searchQuery} onQueryChange={setSearchQuery} />
           </div>
 
-          {/* Stats Bar */}
-          <div className={`flex ${isMobile ? 'flex-col gap-4' : 'items-center justify-between'} mb-4 px-2`}>
-            <div className={`flex ${isMobile ? 'flex-col gap-4' : 'items-center gap-4'}`}>
-              <div className="flex items-center gap-4 justify-between w-full">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
-                    <Database className="w-3.5 h-3.5" />
-                    <span>{files.length} FILES{!isMobile && ' IN ARCHIVE'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>{filteredFiles.length} SHOWING</span>
-                  </div>
-                </div>
-                {isMobile && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-slate-600">SEC:</span>
-                    <div className="flex gap-1">
-                      {[1, 2, 3].map((level) => (
-                        <div
-                          key={level}
-                          className={`w-2.5 h-2.5 rounded-sm transition-colors duration-300 ${securityLevel >= level
-                            ? 'bg-red-500 shadow-sm shadow-red-500/50'
-                            : 'bg-slate-700'
-                            }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+          {/* Controls bar */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14, padding: '0 2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.2em', color: '#3d5a78' }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>
+                {files.length} FILES IN ARCHIVE
               </div>
-
-              {/* Name Filter selector & Upload */}
-              <div className={`flex items-center gap-2 ${isMobile ? 'w-full justify-between' : 'ml-4'}`}>
-                <div className="flex items-center gap-2 flex-1">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded text-xs font-mono text-slate-300 focus:outline-none focus:border-doj-gold/50 cursor-pointer appearance-none transition-colors"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                      backgroundPosition: 'right 0.5rem center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1rem',
-                      paddingRight: '2rem'
-                    }}
-                    title="Sort files"
-                  >
-                    <option value="date-desc">NEWEST</option>
-                    <option value="date-asc">OLDEST</option>
-                    <option value="votes-desc">MOST UPVOTES</option>
-                    <option value="votes-asc">LEAST UPVOTES</option>
-                    <option value="size-desc">BIGGEST FILE</option>
-                    <option value="size-asc">SMALLEST FILE</option>
-                  </select>
-                  <select
-                    value={selectedSuspect}
-                    onChange={(e) => setSelectedSuspect(e.target.value)}
-                    className="flex-1 min-w-0 px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded text-xs font-mono text-slate-300 focus:outline-none focus:border-doj-gold/50 cursor-pointer appearance-none transition-colors"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                      backgroundPosition: 'right 0.5rem center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1rem',
-                      paddingRight: '2rem'
-                    }}
-                  >
-                    <option value="">ALL SUSPECTS</option>
-                    {participantNames.map(name => (
-                      <option key={name} value={name}>{name.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Upload Button */}
-                <div className={isMobile ? 'shrink-0' : 'ml-2'}>
-                  <input
-                    type="file"
-                    id="file-upload"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                    disabled={uploading || showUploadModal}
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className={`flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded transition-colors duration-200 text-xs font-mono text-slate-300
-                      ${(uploading || showUploadModal) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700 cursor-pointer'}
-                    `}
-                  >
-                    {uploading ? (
-                      <Loader2 className="w-3.5 h-3.5 text-doj-gold animate-spin" />
-                    ) : (
-                      <Upload className="w-3.5 h-3.5 text-doj-gold" />
-                    )}
-                    <span className={isMobile ? 'hidden sm:inline' : ''}>{uploading ? 'UPLOADING...' : 'UPLOAD U.R.D.'}</span>
-                  </label>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.2em', color: '#3d5a78' }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                {filteredFiles.length} SHOWING
+              </div>
+              {/* Security indicator */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.2em', color: '#3d5a78' }}>SEC:</span>
+                {[1, 2, 3].map(l => (
+                  <div key={l} style={{ width: 7, height: 7, borderRadius: 1, background: securityLevel >= l ? '#ff2d55' : 'rgba(0,212,255,0.12)', transition: 'all 300ms', boxShadow: securityLevel >= l ? '0 0 6px rgba(255,45,85,0.6)' : 'none' }} />
+                ))}
               </div>
             </div>
-            {!isMobile && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-slate-600">SECURITY LEVEL:</span>
-                <div className="flex gap-1">
-                  {[1, 2, 3].map((level) => (
-                    <div
-                      key={level}
-                      className={`w-2.5 h-2.5 rounded-sm transition-colors duration-300 ${securityLevel >= level
-                        ? 'bg-red-500 shadow-sm shadow-red-500/50'
-                        : 'bg-slate-700'
-                        }`}
-                    />
-                  ))}
-                </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selStyle} title="Sort files">
+                <option value="date-desc">NEWEST</option>
+                <option value="date-asc">OLDEST</option>
+                <option value="votes-desc">MOST UPVOTES</option>
+                <option value="votes-asc">LEAST UPVOTES</option>
+                <option value="size-desc">BIGGEST FILE</option>
+                <option value="size-asc">SMALLEST FILE</option>
+              </select>
+              <select value={selectedSuspect} onChange={e => setSelectedSuspect(e.target.value)} style={{ ...selStyle, minWidth: 150 }}>
+                <option value="">ALL SUSPECTS</option>
+                {participantNames.map(name => <option key={name} value={name}>{name.toUpperCase()}</option>)}
+              </select>
+              <div>
+                <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileSelect} disabled={uploading || showUploadModal} />
+                <label htmlFor="file-upload"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '7px 14px', borderRadius: 3,
+                    fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.18em',
+                    background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.28)',
+                    color: '#00d4ff', cursor: uploading ? 'not-allowed' : 'pointer',
+                    transition: 'all 150ms', textTransform: 'uppercase', fontWeight: 600,
+                    opacity: uploading || showUploadModal ? 0.5 : 1,
+                  }}
+                  onMouseOver={e => { if (!uploading) { e.currentTarget.style.background = 'rgba(0,212,255,0.15)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,255,0.35)'; }}}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                  </svg>
+                  {uploading ? 'UPLOADING...' : 'UPLOAD U.R.D.'}
+                </label>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Evidence Table / Cards */}
-          <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl overflow-hidden backdrop-blur-sm">
-            {/* Table Header */}
+          {/* Evidence table */}
+          <div className="glass-card" style={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: 20, right: 28, pointerEvents: 'none', fontFamily: 'var(--font-display)', fontSize: '2.2rem', fontWeight: 700, color: 'rgba(0,212,255,0.04)', transform: 'rotate(-10deg)', letterSpacing: '0.2em', zIndex: 1 }}>CLASSIFIED</div>
+
             {!isMobile && (
-              <div className="grid grid-cols-[30px_60px_1fr_200px] sm:grid-cols-[40px_60px_1fr_100px_120px_240px] lg:grid-cols-[40px_60px_1fr_120px_140px_300px] gap-2 items-center px-4 sm:px-6 py-3 bg-slate-800/50 border-b border-slate-700/40 text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+              <div className="tbl-head">
                 <div>#</div>
-                <div className="text-center">Votes</div>
-                <div>File Name</div>
-                <div className="hidden sm:block">Suspect</div>
-                <div className="hidden sm:flex flex-col gap-0.5">
-                  <span>Date</span>
-                  <span>Size</span>
-                </div>
-                <div className="text-right sm:pr-2">Intel</div>
+                <div style={{ textAlign: 'center' }}>VOTES</div>
+                <div>FILE NAME</div>
+                <div>SUSPECT</div>
+                <div>DATE / SIZE</div>
+                <div>INTEL</div>
+                <div style={{ textAlign: 'right' }}>ACTION</div>
               </div>
             )}
 
-            {/* File Rows / Cards */}
-            {filteredFiles.length > 0 ? (
-              filteredFiles.map((file, index) => (
-                isMobile ? (
-                  <MobileFileCard
-                    key={file.id}
-                    file={file}
-                    index={index}
-                    fileNumber={filteredFiles.length - index}
-                    onRedactedClick={handleRedactedClick}
-                    user={user}
-                    userProfile={userProfile}
-                    onDelete={handleDeleteFile}
-                    isDeleting={deletingId === (file.docId || file.id.toString())}
-                  />
-                ) : (
-                  <FileRow
-                    key={file.id}
-                    file={file}
-                    index={index}
-                    fileNumber={filteredFiles.length - index}
-                    onRedactedClick={handleRedactedClick}
-                    user={user}
-                    userProfile={userProfile}
-                    onDelete={handleDeleteFile}
-                    isDeleting={deletingId === (file.docId || file.id.toString())}
-                  />
-                )
-              ))
-            ) : (
-              <div className="py-16 text-center">
-                <p className="text-sm font-mono text-slate-600">
-                  NO MATCHING FILES FOUND
-                </p>
-                <p className="text-xs font-mono text-slate-700 mt-1">
-                  Try adjusting your search query
-                </p>
+            {filteredFiles.length > 0 ? filteredFiles.map((file, index) => (
+              isMobile ? (
+                <MobileFileCard key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} />
+              ) : (
+                <FileRow key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} />
+              )
+            )) : (
+              <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, letterSpacing: '0.28em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 8 }}>NO MATCHING FILES FOUND</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.18em', color: '#3d5a78', opacity: 0.5 }}>ADJUST SEARCH PARAMETERS</div>
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <footer className="mt-8 pb-8 text-center">
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-6" />
-            <p className="text-xs font-mono text-slate-600 tracking-wider">
-              DEPARTMENT OF LORENZO — EVIDENCE MANAGEMENT SYSTEM v4.2.0
-            </p>
-            <p className="text-[10px] font-mono text-slate-700 mt-1 tracking-wider">
-              UNAUTHORIZED ACCESS IS PUNISHABLE BY HAVING TO LISTEN TO LORENZO'S KARAOKE
-            </p>
+          <footer style={{ marginTop: 32, paddingBottom: 28, textAlign: 'center' }}>
+            <div className="animated-border" style={{ marginBottom: 20 }} />
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.3em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 5 }}>
+              DEPARTMENT OF LORENZO — INTELLIGENCE MANAGEMENT SYSTEM v4.2.0 // DELOS NETWORK
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 8, letterSpacing: '0.22em', color: '#3d5a78', opacity: 0.4, textTransform: 'uppercase' }}>
+              UNAUTHORIZED ACCESS IS PUNISHABLE BY HAVING TO LISTEN TO LORENZO&apos;S KARAOKE
+            </div>
           </footer>
         </main>
       </div>
@@ -624,32 +526,23 @@ export default function App() {
         onSetDevBypassUploadLimit={setDevBypassUploadLimit}
       />
 
-      {/* Custom Purge Confirmation Modal */}
+      {/* Purge Confirmation Modal */}
       {fileToPurge && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-          <div className="bg-slate-900 border-2 border-red-900/50 rounded-xl p-6 max-w-sm w-full shadow-2xl shadow-red-900/20 animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="font-mono text-xl font-bold text-red-500 mb-2 flex items-center gap-2 uppercase tracking-wider">
-              <AlertTriangle className="w-5 h-5 animate-pulse" />
-              CONFIRM PURGE
-            </h3>
-            <p className="font-mono text-xs text-slate-400 mb-6 leading-relaxed">
-              Are you sure you want to permanently purge <span className="text-red-400 font-bold">"{fileToPurge.name}"</span>? This action is irreversible and will erase the file from the archive.
-            </p>
-            <div className="flex justify-end gap-3 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setFileToPurge(null)}
-                className="px-4 py-2 font-mono text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase"
-              >
-                Abort
-              </button>
-              <button
-                type="button"
-                onClick={confirmPurge}
-                className="px-5 py-2 rounded bg-red-900/80 text-white font-mono text-xs font-bold uppercase tracking-widest hover:bg-red-600 border border-red-500 transition-all shadow-lg active:scale-95"
-              >
-                EXECUTE PURGE
-              </button>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setFileToPurge(null)}>
+          <div className="slide-up" onClick={e => e.stopPropagation()} style={{ background: 'rgba(8,4,6,0.95)', border: '1px solid rgba(255,45,85,0.4)', borderRadius: 4, maxWidth: 400, width: '100%', padding: 24, boxShadow: '0 0 48px rgba(255,45,85,0.15), 0 24px 80px rgba(0,0,0,0.9)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: '#ff2d55', letterSpacing: '0.15em' }}>CONFIRM PURGE</span>
+            </div>
+            <div style={{ fontSize: 11, color: '#7aa8cc', lineHeight: 1.7, marginBottom: 20, letterSpacing: '0.03em', fontFamily: 'var(--font-mono)' }}>
+              Permanently purge <span style={{ color: '#ff2d55', fontWeight: 600 }}>&quot;{fileToPurge.name}&quot;</span> from the archive? This action is <strong style={{ color: '#ff2d55' }}>irreversible</strong>.
+            </div>
+            <div style={{ textAlign: 'center', marginBottom: 18, opacity: 0.08 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700, color: '#ff2d55', letterSpacing: '0.3em', transform: 'rotate(-6deg)', display: 'inline-block' }}>PURGE AUTHORIZED</div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button onClick={() => setFileToPurge(null)} style={{ background: 'transparent', color: '#7aa8cc', padding: '8px 16px', borderRadius: 3, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)', transition: 'color 150ms' }} onMouseOver={e => e.currentTarget.style.color = '#dceeff'} onMouseOut={e => e.currentTarget.style.color = '#7aa8cc'}>ABORT</button>
+              <button onClick={confirmPurge} style={{ background: 'rgba(255,45,85,0.1)', color: '#ff2d55', border: '1px solid rgba(255,45,85,0.25)', padding: '8px 20px', borderRadius: 3, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-display)', transition: 'all 150ms' }} onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.18)'; e.currentTarget.style.borderColor = '#ff2d55'; }} onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,45,85,0.25)'; }}>EXECUTE PURGE</button>
             </div>
           </div>
         </div>

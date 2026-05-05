@@ -1,190 +1,129 @@
 import { useState } from 'react';
-import { Folder, FileLock, Trash2, Loader2, ShieldAlert, MessageSquare } from 'lucide-react';
 import RedactedBox from './RedactedBox';
 import VoteButtons from './VoteButtons';
 import IntelReportPanel from './IntelReportPanel';
 
-const statusIcon = {
-    CLASSIFIED: FileLock,
-    SEALED: FileLock,
-    REDACTED: FileLock,
-    'UNDER REVIEW': Folder,
+const statusBadgeClass = {
+    CLASSIFIED: 'badge-classified',
+    SEALED: 'badge-sealed',
+    REDACTED: 'badge-redacted',
+    'UNDER REVIEW': 'badge-review',
 };
 
-// eslint-disable-next-line no-unused-vars
-// eslint-disable-next-line no-unused-vars
-export default function MobileFileCard({ file, index, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
-    const Icon = statusIcon[file.status] || Folder;
-    const isOwner = file.uploadedById === user?.uid;
+export default function MobileFileCard({ file, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
     const [showReports, setShowReports] = useState(false);
+    const isOwner = file.uploadedById === user?.uid;
+    const badgeClass = statusBadgeClass[file.status] || 'badge-redacted';
+    const suspects = (file.suspectNames || (file.suspectName ? [file.suspectName] : ['Lorenzo'])).join(', ');
+    const fileNum = String(fileNumber).padStart(3, '0');
 
-    const commentCount = file.commentCount || 0;
-
-    const handleDoubleClick = async () => {
+    const handleDownload = async () => {
         if (!file.downloadURL) return;
-
         try {
-            // Fetch the file as a Blob
             const response = await fetch(file.downloadURL);
             const blob = await response.blob();
-
-            // Create a temporary Blob URL
             const blobUrl = window.URL.createObjectURL(blob);
-
-            // Create a hidden anchor to force download
             const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = file.name;
-            document.body.appendChild(a);
-            a.click();
-
-            // Cleanup
+            a.href = blobUrl; a.download = file.name;
+            document.body.appendChild(a); a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(blobUrl);
-        } catch (error) {
-            console.error("Error downloading file:", error);
-            alert("Failed to download the file.");
-        }
+        } catch { /* ignore */ }
     };
 
     return (
-        <div className="flex flex-col border-b border-slate-800/60">
-            <div
-                className={`flex flex-col gap-3 p-4 transition-opacity duration-300 ${isDeleting ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}
-                onDoubleClick={(e) => {
-                    if (isDeleting) return;
-                    handleDoubleClick(e);
-                }}
-            >
-            {/* Header: Name and Status */}
-            <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-xs font-mono text-slate-600 shrink-0">
-                        {String(fileNumber).padStart(3, '0')}
-                    </span>
+        <div className="glass-card fade-in" style={{ borderRadius: 0, borderLeft: 'none', borderRight: 'none', borderTop: 'none' }}>
+            {/* Top: num + filename + badge */}
+            <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '12px 14px 10px',
+                borderBottom: '1px solid rgba(0,212,255,0.05)',
+                opacity: isDeleting ? 0.3 : 1, transition: 'opacity 300ms',
+            }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, color: '#3d5a78', fontWeight: 600, flexShrink: 0 }}>{fileNum}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><rect width="6" height="5" x="9" y="13" rx="1" /><path d="M10 13v-1a2 2 0 0 1 4 0v1" />
+                </svg>
+                <div style={{ flex: 1, minWidth: 0 }}>
                     {file.downloadURL ? (
                         <a
-                            href={file.downloadURL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-start gap-2 min-w-0 hover:underline decoration-doj-gold underline-offset-4"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <Icon className="w-4 h-4 text-doj-gold shrink-0 mt-0.5" />
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-sm font-mono text-doj-gold truncate block">
-                                    {file.name}
-                                </span>
-                                {file.uploaderUsername && (
-                                    <span className="text-[10px] font-mono text-slate-500 truncate">
-                                        BY: {file.uploaderUsername.toUpperCase()}
-                                    </span>
-                                )}
-                            </div>
-                        </a>
+                            href={file.downloadURL} target="_blank" rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                fontFamily: 'var(--font-display)', fontSize: 13, color: '#00d4ff',
+                                fontWeight: 600, textDecoration: 'none', overflow: 'hidden',
+                                textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block',
+                                letterSpacing: '0.03em', textShadow: '0 0 8px rgba(0,212,255,0.08)',
+                            }}
+                        >{file.name}</a>
                     ) : (
-                        <div className="flex items-start gap-2 min-w-0">
-                            <Icon className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-sm font-mono text-slate-300 truncate block">
-                                    {file.name}
-                                </span>
-                                {file.uploaderUsername && (
-                                    <span className="text-[10px] font-mono text-slate-500 truncate">
-                                        BY: {file.uploaderUsername.toUpperCase()}
-                                    </span>
-                                )}
-                            </div>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: '#dceeff', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {file.name}
+                        </span>
+                    )}
+                    {file.uploaderUsername && (
+                        <div style={{ fontSize: 8, color: '#3d5a78', letterSpacing: '0.18em', marginTop: 2, fontFamily: 'var(--font-display)' }}>
+                            BY: {file.uploaderUsername.toUpperCase()}
                         </div>
                     )}
                 </div>
-                <div className="shrink-0 flex items-center gap-2">
-                    <VoteButtons file={file} user={user} />
+                <span className={`badge ${badgeClass}`} style={{ flexShrink: 0 }}>{file.status}</span>
+            </div>
+
+            {/* Middle: suspect + date/size */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid rgba(0,212,255,0.05)' }}>
+                <div style={{ padding: '8px 14px', borderRight: '1px solid rgba(0,212,255,0.05)' }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.25em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 3 }}>SUSPECT</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: '#7aa8cc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{suspects}</div>
+                </div>
+                <div style={{ padding: '8px 14px' }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.25em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 3 }}>DATE / SIZE</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: '#7aa8cc' }}>{file.date} · {file.size}</div>
                 </div>
             </div>
 
-            {/* Middle row: Suspect full width */}
-            <div className="flex flex-col gap-1 mt-1">
-                <span className="text-[10px] font-mono text-slate-500 uppercase">Suspect</span>
-                <span className="text-xs font-mono text-slate-300 truncate" title={file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}>
-                    {file.suspectNames ? file.suspectNames.join(', ') : (file.suspectName || 'LORENZO')}
-                </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase">Date</span>
-                    <span className="text-xs font-mono text-slate-400">
-                        {file.date}
-                    </span>
-                </div>
-                <div className="flex flex-col gap-1 items-end">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase">Size</span>
-                    <span className="text-xs font-mono text-slate-400">
-                        {file.size}
-                    </span>
-                </div>
-            </div>
-
-            {/* Bottom Row: Redacted Box & Action */}
-            <div className="flex items-center justify-between gap-3 mt-2">
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowReports(!showReports);
-                    }}
-                    className="flex items-center justify-center p-2 rounded border border-slate-800/60 bg-slate-900/40 text-slate-500 hover:text-doj-gold transition-all outline-none"
-                    title="Toggle Intel Reports"
-                >
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="ml-1.5 text-xs font-mono">{commentCount}</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (isOwner && !isDeleting) onDelete(file);
-                    }}
-                    disabled={!isOwner || isDeleting}
-                    className={`shrink-0 p-2 flex items-center justify-center border rounded transition-all outline-none
-                        ${isDeleting
-                            ? 'border-slate-700 bg-slate-800/50 text-slate-500 cursor-not-allowed'
-                            : isOwner
-                                ? 'border-red-900/40 bg-red-950/20 text-red-500 active:scale-95'
-                                : 'border-slate-800/60 bg-slate-900/40 text-slate-600 cursor-not-allowed'
-                        }`}
-                    title={
-                        isDeleting
-                            ? "Purging record..."
-                            : isOwner
-                                ? "Purge from Archive"
-                                : "OWNERSHIP UNVERIFIED - CANNOT PURGE"
-                    }
-                >
-                    {isDeleting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : !isOwner ? (
-                        <ShieldAlert className="w-4 h-4 opacity-50" />
-                    ) : (
-                        <Trash2 className="w-4 h-4" />
-                    )}
-                </button>
-                <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-1 w-full overflow-hidden"
-                >
+            {/* Bottom: votes + redacted + actions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px' }}>
+                <VoteButtons file={file} user={user} />
+                <div style={{ flex: 1, minWidth: 0 }}>
                     <RedactedBox text={file.redactedText} onRedactedClick={onRedactedClick} />
                 </div>
-            </div>
+                <button
+                    onClick={e => { e.stopPropagation(); setShowReports(v => !v); }}
+                    style={{
+                        flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: showReports ? 'rgba(0,212,255,0.08)' : 'transparent',
+                        color: showReports ? '#00d4ff' : '#3d5a78',
+                        padding: '7px 10px', borderRadius: 2,
+                        border: `1px solid ${showReports ? 'rgba(0,212,255,0.28)' : 'rgba(0,212,255,0.12)'}`,
+                        transition: 'all 150ms', cursor: 'pointer',
+                    }}
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                </button>
+                {isOwner && (
+                    <button
+                        onClick={e => { e.stopPropagation(); if (!isDeleting) onDelete(file); }}
+                        disabled={isDeleting}
+                        style={{
+                            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: 'rgba(255,45,85,0.1)', color: '#ff2d55',
+                            border: '1px solid rgba(255,45,85,0.25)',
+                            padding: '7px 10px', borderRadius: 2,
+                            cursor: isDeleting ? 'not-allowed' : 'pointer',
+                            transition: 'all 150ms',
+                        }}
+                    >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                        </svg>
+                    </button>
+                )}
             </div>
             {showReports && (
-                <IntelReportPanel
-                    file={file}
-                    user={user}
-                    userProfile={userProfile}
-                />
+                <IntelReportPanel file={file} user={user} userProfile={userProfile} />
             )}
         </div>
     );

@@ -5,10 +5,63 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="The Lorenzo Files — Official Department of Lorenzo Evidence Archive. Classified parody documents and files." />
-    <title>The Lorenzo Files — Official Evidence Archive</title>
+    <title>The Lorenzo Files — DELOS Intelligence System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <!-- Blueprint grid -->
+    <div class="blueprint-grid"></div>
+    <!-- Scanlines -->
+    <div class="scanlines"></div>
+    <!-- Vignette -->
+    <div class="vignette"></div>
+    <!-- Watermark -->
+    <div class="watermark"><span>CLASSIFIED</span></div>
+    <!-- Data stream canvas -->
+    <canvas id="datastream"></canvas>
+
     <div id="root"></div>
+
+    <script>
+    (function() {
+      var canvas = document.getElementById('datastream');
+      var ctx = canvas.getContext('2d');
+      var cols, drops;
+      var chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノ∆≈∑∫Ω01101';
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        cols = Math.floor(canvas.width / 22);
+        drops = new Array(cols).fill(0).map(function() { return Math.random() * -60; });
+      }
+
+      function draw() {
+        ctx.fillStyle = 'rgba(5,7,9,0.06)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '13px "IBM Plex Mono", monospace';
+        for (var i = 0; i < cols; i++) {
+          if (Math.random() > 0.96) continue;
+          var ch = chars[Math.floor(Math.random() * chars.length)];
+          var x = i * 22;
+          var y = drops[i] * 22;
+          ctx.fillStyle = 'rgba(0,212,255,' + (0.6 + Math.random() * 0.4) + ')';
+          ctx.fillText(ch, x, y);
+          ctx.fillStyle = 'rgba(0,212,255,' + (0.08 + Math.random() * 0.12) + ')';
+          ctx.fillText(chars[Math.floor(Math.random() * chars.length)], x, y - 22);
+          drops[i]++;
+          if (drops[i] * 22 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        }
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      setInterval(draw, 60);
+    })();
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
