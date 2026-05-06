@@ -4,7 +4,7 @@ import { signOut } from 'firebase/auth';
 import RadarSeal from './RadarSeal';
 import ThemeToggle from './ThemeToggle';
 
-export default function Header({ username, lightMode, onToggleLightMode }) {
+export default function Header({ username, lightMode, onToggleLightMode, onlineCount }) {
     const [time, setTime] = useState(new Date());
 
     useEffect(() => {
@@ -56,6 +56,7 @@ export default function Header({ username, lightMode, onToggleLightMode }) {
                     {[
                         { label: 'ENCRYPTION', val: 'AES-256', valColor: 'var(--c-tx2)' },
                         { label: 'SIGNAL', val: 'ACTIVE', valColor: '#00ff88' },
+                        { label: 'ONLINE', val: onlineCount == null ? '—' : String(onlineCount), valColor: '#00ff88' },
                         { label: 'UTC', val: utc, valColor: 'var(--c-ac)' },
                     ].map((s, i) => (
                         <div key={i} className="header-status-cell" style={{
