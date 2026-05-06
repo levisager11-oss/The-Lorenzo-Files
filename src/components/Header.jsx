@@ -6,11 +6,23 @@ import ThemeToggle from './ThemeToggle';
 
 export default function Header({ username, lightMode, onToggleLightMode, onlineCount }) {
     const [time, setTime] = useState(new Date());
+    const clickCount = { current: 0, timer: null };
 
     useEffect(() => {
         const t = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
+
+    const handleTitleClick = () => {
+        clearTimeout(clickCount.timer);
+        clickCount.current += 1;
+        if (clickCount.current >= 5) {
+            clickCount.current = 0;
+            window.dispatchEvent(new CustomEvent('lorenzoEasterEgg'));
+        } else {
+            clickCount.timer = setTimeout(() => { clickCount.current = 0; }, 1500);
+        }
+    };
 
     const handleSignOut = () => {
         signOut(auth).catch(console.error);
@@ -35,11 +47,15 @@ export default function Header({ username, lightMode, onToggleLightMode, onlineC
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20, flex: 1 }}>
                     <RadarSeal size={56} />
                     <div>
-                        <div style={{
-                            fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700,
-                            color: 'var(--c-ac)', letterSpacing: '0.18em', lineHeight: 1,
-                            textShadow: '0 0 20px var(--ac-a35)',
-                        }}>
+                        <div
+                            onClick={handleTitleClick}
+                            style={{
+                                fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700,
+                                color: 'var(--c-ac)', letterSpacing: '0.18em', lineHeight: 1,
+                                textShadow: '0 0 20px var(--ac-a35)',
+                                cursor: 'default', userSelect: 'none',
+                            }}
+                        >
                             DEPARTMENT OF LORENZO
                         </div>
                         <div style={{
