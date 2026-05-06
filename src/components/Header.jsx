@@ -5,7 +5,7 @@ import RadarSeal from './RadarSeal';
 import ThemeToggle from './ThemeToggle';
 import useIsMobile from '../hooks/useIsMobile';
 
-export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount }) {
+export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard }) {
     const [time, setTime] = useState(new Date());
     const isMobile = useIsMobile();
     const clickCount = { current: 0, timer: null };
@@ -108,10 +108,13 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                         gap: 4, height: '100%',
                     }}>
                         {username && (
-                            <>
+                            <button onClick={onShowProfile} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
                                 <div style={{ fontSize: 8, letterSpacing: '0.2em', color: 'var(--c-tx3)', fontFamily: 'var(--font-display)', textTransform: 'uppercase' }}>OPERATOR</div>
-                                <div style={{ fontSize: 10, letterSpacing: '0.12em', color: 'var(--c-ac)', fontFamily: 'var(--font-mono)' }}>{username.toUpperCase()}</div>
-                            </>
+                                <div style={{ fontSize: 10, letterSpacing: '0.12em', color: 'var(--c-ac)', fontFamily: 'var(--font-mono)', transition: 'text-shadow 150ms' }}
+                                    onMouseOver={e => e.currentTarget.style.textShadow = '0 0 10px var(--ac-a35)'}
+                                    onMouseOut={e => e.currentTarget.style.textShadow = 'none'}
+                                >{username.toUpperCase()}</div>
+                            </button>
                         )}
                         {/* XP badge — visible on mobile only (status cells are hidden) */}
                         {isMobile && (
@@ -121,6 +124,29 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                             </div>
                         )}
                         <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                            {/* Leaderboard button */}
+                            <button
+                                onClick={onShowLeaderboard}
+                                title="XP Leaderboard"
+                                style={{
+                                    background: 'rgba(255,215,0,0.08)', color: '#ffd700',
+                                    border: '1px solid rgba(255,215,0,0.25)',
+                                    padding: isMobile ? '5px 8px' : '5px 10px', borderRadius: 2,
+                                    display: 'flex', alignItems: 'center', gap: 4,
+                                    cursor: 'pointer', transition: 'all 150ms',
+                                    fontFamily: 'var(--font-display)', fontWeight: 600,
+                                }}
+                                onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.15)'; e.currentTarget.style.borderColor = '#ffd700'; }}
+                                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,215,0,0.25)'; }}
+                            >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                                    <path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                                </svg>
+                                {!isMobile && <span style={{ fontSize: 9, letterSpacing: '0.1em' }}>BOARD</span>}
+                            </button>
                             <ThemeToggle lightMode={lightMode} onToggle={onToggleLightMode} />
 
                             <button
