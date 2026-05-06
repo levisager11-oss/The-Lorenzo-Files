@@ -32,6 +32,7 @@ import {
 import LoginScreen from './components/LoginScreen';
 import EmailVerificationGate from './components/EmailVerificationGate';
 import DevMenu from './components/DevMenu';
+import MemeEasterEgg from './components/MemeEasterEgg';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
@@ -518,6 +519,9 @@ export default function App() {
 
       {/* Security Breach Overlay */}
       {breached && <SecurityBreach onDismiss={handleDismissBreach} />}
+
+      {/* Meme Easter Egg — trigger: Konami Code ↑↑↓↓←→←→BA */}
+      <MemeEasterEgg />
 
       {/* Developer Menu (levi.sager11@gmail.com only) */}
       <DevMenu
