@@ -20,7 +20,8 @@ import {
   updateDoc,
   query,
   orderBy,
-  deleteDoc
+  deleteDoc,
+  increment
 } from 'firebase/firestore';
 import {
   ref,
@@ -33,6 +34,8 @@ import LoginScreen from './components/LoginScreen';
 import EmailVerificationGate from './components/EmailVerificationGate';
 import DevMenu from './components/DevMenu';
 import MemeEasterEgg from './components/MemeEasterEgg';
+import ProfilePage from './components/ProfilePage';
+import LeaderboardPage from './components/LeaderboardPage';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
@@ -108,6 +111,9 @@ export default function App() {
   
   // Purge State
   const [fileToPurge, setFileToPurge] = useState(null);
+
+  // Page navigation
+  const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard'
 
   // Dev Menu State
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
@@ -330,6 +336,10 @@ export default function App() {
       };
 
       await setDoc(doc(db, "evidenceFiles", newEvidence.id.toString()), newEvidence);
+
+      await updateDoc(doc(db, "users", user.uid), {
+        experiencePoints: increment(50)
+      });
     } catch (error) {
       console.error("Error uploading file:", error);
       alert("Failed to upload the file to Firebase.");
@@ -398,7 +408,15 @@ export default function App() {
       <SpeedInsights />
 
       <div className="relative z-10">
-        <Header username={userProfile?.username} lightMode={lightMode} onToggleLightMode={toggleLightMode} onlineCount={onlineCount} />
+        <Header
+            username={userProfile?.username}
+            experiencePoints={userProfile?.experiencePoints}
+            lightMode={lightMode}
+            onToggleLightMode={toggleLightMode}
+            onlineCount={onlineCount}
+            onShowProfile={() => setCurrentPage('profile')}
+            onShowLeaderboard={() => setCurrentPage('leaderboard')}
+          />
 
         {/* Classification Banner */}
         <ClassificationBanner />
@@ -522,6 +540,13 @@ export default function App() {
 
       {/* Meme Easter Egg — trigger: Konami Code ↑↑↓↓←→←→BA */}
       <MemeEasterEgg />
+
+      {currentPage === 'profile' && (
+        <ProfilePage user={user} userProfile={userProfile} files={files} onClose={() => setCurrentPage('main')} />
+      )}
+      {currentPage === 'leaderboard' && (
+        <LeaderboardPage user={user} files={files} onClose={() => setCurrentPage('main')} />
+      )}
 
       {/* Developer Menu (levi.sager11@gmail.com only) */}
       <DevMenu

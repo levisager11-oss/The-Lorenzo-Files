@@ -20,7 +20,7 @@ export default function UsernamePrompt({ user, onComplete }) {
         setSubmitting(true);
         setError('');
         try {
-            await setDoc(doc(db, "users", user.uid), { username: trimmed, createdAt: Date.now(), email: user.email });
+            await setDoc(doc(db, "users", user.uid), { username: trimmed, createdAt: Date.now(), email: user.email, experiencePoints: 0 });
             if (onComplete) onComplete({ username: trimmed });
         } catch (err) {
             console.error("Error setting username:", err);
