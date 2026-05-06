@@ -20,7 +20,8 @@ import {
   updateDoc,
   query,
   orderBy,
-  deleteDoc
+  deleteDoc,
+  increment
 } from 'firebase/firestore';
 import {
   ref,
@@ -330,6 +331,10 @@ export default function App() {
       };
 
       await setDoc(doc(db, "evidenceFiles", newEvidence.id.toString()), newEvidence);
+
+      await updateDoc(doc(db, "users", user.uid), {
+        experiencePoints: increment(50)
+      });
     } catch (error) {
       console.error("Error uploading file:", error);
       alert("Failed to upload the file to Firebase.");
@@ -398,7 +403,7 @@ export default function App() {
       <SpeedInsights />
 
       <div className="relative z-10">
-        <Header username={userProfile?.username} lightMode={lightMode} onToggleLightMode={toggleLightMode} onlineCount={onlineCount} />
+        <Header username={userProfile?.username} experiencePoints={userProfile?.experiencePoints} lightMode={lightMode} onToggleLightMode={toggleLightMode} onlineCount={onlineCount} />
 
         {/* Classification Banner */}
         <ClassificationBanner />
