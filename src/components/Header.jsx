@@ -3,9 +3,11 @@ import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import RadarSeal from './RadarSeal';
 import ThemeToggle from './ThemeToggle';
+import useIsMobile from '../hooks/useIsMobile';
 
 export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount }) {
     const [time, setTime] = useState(new Date());
+    const isMobile = useIsMobile();
     const clickCount = { current: 0, timer: null };
 
     useEffect(() => {
@@ -41,33 +43,38 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
             transition: 'background 250ms ease',
         }}>
             <div className="top-bar" />
-            <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 28px', display: 'flex', alignItems: 'stretch', minHeight: 80 }}>
+            <div style={{ maxWidth: 1400, margin: '0 auto', padding: isMobile ? '0 12px' : '0 28px', display: 'flex', alignItems: 'stretch', minHeight: isMobile ? 60 : 80 }}>
 
                 {/* Left: seal + title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 20, flex: 1 }}>
-                    <RadarSeal size={56} />
-                    <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 20, flex: 1, minWidth: 0 }}>
+                    <div style={{ flexShrink: 0 }}>
+                        <RadarSeal size={isMobile ? 36 : 56} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
                         <div
                             onClick={handleTitleClick}
                             style={{
-                                fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700,
-                                color: 'var(--c-ac)', letterSpacing: '0.18em', lineHeight: 1,
+                                fontFamily: 'var(--font-display)', fontSize: isMobile ? '1.1rem' : '2rem', fontWeight: 700,
+                                color: 'var(--c-ac)', letterSpacing: isMobile ? '0.1em' : '0.18em', lineHeight: 1,
                                 textShadow: '0 0 20px var(--ac-a35)',
                                 cursor: 'default', userSelect: 'none',
+                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                             }}
                         >
-                            DEPARTMENT OF LORENZO
+                            {isMobile ? 'LORENZO FILES' : 'DEPARTMENT OF LORENZO'}
                         </div>
-                        <div style={{
-                            fontFamily: 'var(--font-display)', fontSize: '0.7rem',
-                            letterSpacing: '0.4em', color: 'var(--c-tx2)', marginTop: 4, textTransform: 'uppercase',
-                        }}>
-                            INTELLIGENCE MANAGEMENT SYSTEM // DELOS NETWORK NODE 7
-                        </div>
+                        {!isMobile && (
+                            <div style={{
+                                fontFamily: 'var(--font-display)', fontSize: '0.7rem',
+                                letterSpacing: '0.4em', color: 'var(--c-tx2)', marginTop: 4, textTransform: 'uppercase',
+                            }}>
+                                INTELLIGENCE MANAGEMENT SYSTEM // DELOS NETWORK NODE 7
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Right: status cells + agent */}
+                {/* Right: status cells (desktop only) + agent */}
                 <div style={{ display: 'flex', alignItems: 'center', borderLeft: '1px solid var(--ac-a12)' }}>
                     {[
                         { label: 'ENCRYPTION', val: 'AES-256', valColor: 'var(--c-tx2)' },
@@ -96,7 +103,7 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
 
                     {/* Agent + controls */}
                     <div className="header-agent-cell" style={{
-                        padding: '0 16px 0 20px',
+                        padding: isMobile ? '0 0 0 10px' : '0 16px 0 20px',
                         display: 'flex', flexDirection: 'column', justifyContent: 'center',
                         gap: 4, height: '100%',
                     }}>
@@ -106,6 +113,13 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                                 <div style={{ fontSize: 10, letterSpacing: '0.12em', color: 'var(--c-ac)', fontFamily: 'var(--font-mono)' }}>{username.toUpperCase()}</div>
                             </>
                         )}
+                        {/* XP badge — visible on mobile only (status cells are hidden) */}
+                        {isMobile && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <span style={{ fontSize: 7, letterSpacing: '0.18em', color: 'var(--c-tx3)', fontFamily: 'var(--font-display)', textTransform: 'uppercase' }}>XP</span>
+                                <span style={{ fontSize: 9, letterSpacing: '0.1em', color: 'var(--c-ac)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{experiencePoints ?? 0}</span>
+                            </div>
+                        )}
                         <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
                             <ThemeToggle lightMode={lightMode} onToggle={onToggleLightMode} />
 
@@ -114,7 +128,7 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                                 style={{
                                     background: 'rgba(255,45,85,0.1)', color: '#ff2d55',
                                     border: '1px solid rgba(255,45,85,0.25)',
-                                    padding: '5px 12px', borderRadius: 2,
+                                    padding: isMobile ? '5px 8px' : '5px 12px', borderRadius: 2,
                                     fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
                                     display: 'flex', alignItems: 'center', gap: 5,
                                     cursor: 'pointer', transition: 'all 150ms',
@@ -126,7 +140,7 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
                                 </svg>
-                                EXFIL
+                                {!isMobile && 'EXFIL'}
                             </button>
                         </div>
                     </div>
