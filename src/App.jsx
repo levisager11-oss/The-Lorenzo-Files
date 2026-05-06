@@ -11,6 +11,7 @@ import UploadModal from './components/UploadModal';
 import UsernamePrompt from './components/UsernamePrompt';
 import { participantNames } from './data/names';
 import { db, storage, auth, onAuthStateChanged } from './lib/firebase';
+import useOnlineCount from './hooks/useOnlineCount';
 import {
   collection,
   onSnapshot,
@@ -111,6 +112,7 @@ export default function App() {
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
 
   const isMobile = useIsMobile();
+  const onlineCount = useOnlineCount(user?.uid);
 
   // Auth Listener
   useEffect(() => {
@@ -395,7 +397,7 @@ export default function App() {
       <SpeedInsights />
 
       <div className="relative z-10">
-        <Header username={userProfile?.username} lightMode={lightMode} onToggleLightMode={toggleLightMode} />
+        <Header username={userProfile?.username} lightMode={lightMode} onToggleLightMode={toggleLightMode} onlineCount={onlineCount} />
 
         {/* Classification Banner */}
         <ClassificationBanner />
