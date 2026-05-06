@@ -151,7 +151,7 @@ export default function MemeEasterEgg() {
                         letterSpacing: '0.22em',
                         textShadow: '0 0 20px var(--ac-a35)',
                     }}>
-                        OPERATIVE: HOLZMANN
+                        OPERATIVE: MR TUNG
                     </div>
                     <div style={{
                         fontFamily: 'var(--font-mono)', fontSize: 10,
