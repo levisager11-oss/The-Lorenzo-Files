@@ -29,8 +29,13 @@ export default function MemeEasterEgg() {
                 setProgress(0);
             }
         };
+        const triggerDirect = () => { setVisible(true); setImgError(false); };
         window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
+        window.addEventListener('lorenzoEasterEgg', triggerDirect);
+        return () => {
+            window.removeEventListener('keydown', handler);
+            window.removeEventListener('lorenzoEasterEgg', triggerDirect);
+        };
     }, []);
 
     if (!visible) {
