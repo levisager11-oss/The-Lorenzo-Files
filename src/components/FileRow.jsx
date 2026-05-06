@@ -41,7 +41,7 @@ export default function FileRow({ file, fileNumber, onRedactedClick, user, userP
                 title={file.downloadURL ? 'Double-click to download' : undefined}
             >
                 {/* # */}
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: '#3d5a78', fontWeight: 600 }}>{fileNum}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--c-tx3)', fontWeight: 600 }}>{fileNum}</div>
 
                 {/* Votes */}
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -50,7 +50,7 @@ export default function FileRow({ file, fileNumber, onRedactedClick, user, userP
 
                 {/* File name */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-ac)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><rect width="6" height="5" x="9" y="13" rx="1" /><path d="M10 13v-1a2 2 0 0 1 4 0v1" />
                     </svg>
                     <div style={{ minWidth: 0 }}>
@@ -59,19 +59,19 @@ export default function FileRow({ file, fileNumber, onRedactedClick, user, userP
                                 href={file.downloadURL} target="_blank" rel="noopener noreferrer"
                                 onClick={e => e.stopPropagation()}
                                 style={{
-                                    fontFamily: 'var(--font-display)', fontSize: 13, color: '#00d4ff',
+                                    fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--c-ac)',
                                     fontWeight: 600, letterSpacing: '0.05em', textDecoration: 'none',
                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                     display: 'block', textShadow: '0 0 8px rgba(0,212,255,0.08)',
                                 }}
                             >{file.name}</a>
                         ) : (
-                            <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: '#dceeff', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--c-tx)', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {file.name}
                             </span>
                         )}
                         {file.uploaderUsername && (
-                            <div style={{ fontSize: 9, color: '#3d5a78', letterSpacing: '0.15em', marginTop: 1, fontFamily: 'var(--font-display)' }}>
+                            <div style={{ fontSize: 9, color: 'var(--c-tx3)', letterSpacing: '0.15em', marginTop: 1, fontFamily: 'var(--font-display)' }}>
                                 BY: {file.uploaderUsername.toUpperCase()}
                             </div>
                         )}
@@ -79,14 +79,14 @@ export default function FileRow({ file, fileNumber, onRedactedClick, user, userP
                 </div>
 
                 {/* Suspect */}
-                <div style={{ fontSize: 10, color: '#7aa8cc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-display)' }} title={suspects}>
+                <div style={{ fontSize: 10, color: 'var(--c-tx2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-display)' }} title={suspects}>
                     {suspects}
                 </div>
 
                 {/* Date / Size */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: 10, color: '#7aa8cc', fontFamily: 'var(--font-display)' }}>{file.date}</span>
-                    <span style={{ fontSize: 9, color: '#3d5a78', fontFamily: 'var(--font-mono)' }}>{file.size}</span>
+                    <span style={{ fontSize: 10, color: 'var(--c-tx2)', fontFamily: 'var(--font-display)' }}>{file.date}</span>
+                    <span style={{ fontSize: 9, color: 'var(--c-tx3)', fontFamily: 'var(--font-mono)' }}>{file.size}</span>
                 </div>
 
                 {/* Intel (redacted + badge + comment button) */}
@@ -96,10 +96,10 @@ export default function FileRow({ file, fileNumber, onRedactedClick, user, userP
                         onClick={e => { e.stopPropagation(); setShowReports(v => !v); }}
                         style={{
                             display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-                            background: showReports ? 'rgba(0,212,255,0.08)' : 'transparent',
-                            color: showReports ? '#00d4ff' : '#3d5a78',
+                            background: showReports ? 'var(--ac-a08)' : 'transparent',
+                            color: showReports ? 'var(--c-ac)' : 'var(--c-tx3)',
                             padding: '5px 8px', borderRadius: 2, fontSize: 9,
-                            border: `1px solid ${showReports ? 'rgba(0,212,255,0.28)' : 'rgba(0,212,255,0.12)'}`,
+                            border: `1px solid ${showReports ? 'var(--ac-a28)' : 'var(--ac-a12)'}`,
                             transition: 'all 150ms', cursor: 'pointer',
                         }}
                         title="Toggle Intel Reports"
@@ -135,7 +135,7 @@ export default function FileRow({ file, fileNumber, onRedactedClick, user, userP
                             PURGE
                         </button>
                     ) : (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3d5a78" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-tx3)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
                     )}

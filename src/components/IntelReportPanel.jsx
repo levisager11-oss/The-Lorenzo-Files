@@ -19,7 +19,6 @@ import {
 } from 'firebase/firestore';
 import { voteOnComment } from '../lib/voteOnComment';
 
-// Component for the single upvote button on a comment
 function CommentVoteButton({ fileId, report, user }) {
     const [myVote, setMyVote] = useState(null);
     const [isVoting, setIsVoting] = useState(false);
@@ -36,53 +35,44 @@ function CommentVoteButton({ fileId, report, user }) {
     const handleVote = async (type) => {
         if (isVoting || !user) return;
         setIsVoting(true);
-        try {
-            await voteOnComment(fileId, report.id, user.uid, type);
-        } catch (error) {
-            console.error("Voting failed:", error);
-        } finally {
-            setIsVoting(false);
-        }
+        try { await voteOnComment(fileId, report.id, user.uid, type); }
+        catch (error) { console.error("Voting failed:", error); }
+        finally { setIsVoting(false); }
     };
 
     const upvotes = report.upvotes || 0;
     const hasVoted = myVote === 'up';
 
     return (
-        <div className={`flex flex-col items-center justify-center gap-1 ${isVoting ? 'opacity-40 cursor-not-allowed' : ''}`}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, opacity: isVoting ? 0.4 : 1 }}>
             <motion.button
                 whileHover={!isVoting ? { scale: 1.2 } : {}}
                 whileTap={!isVoting ? { scale: 0.9 } : {}}
                 onClick={(e) => { e.stopPropagation(); handleVote('up'); }}
                 disabled={isVoting}
-                className={`p-1 rounded transition-colors ${
-                    hasVoted
-                        ? 'text-doj-gold bg-doj-gold/10 shadow-[0_0_10px_rgba(0,212,255,0.2)]'
-                        : 'text-slate-500 hover:text-doj-gold hover:bg-slate-800'
-                }`}
+                style={{
+                    padding: 4, borderRadius: 4, border: 'none', cursor: isVoting ? 'not-allowed' : 'pointer',
+                    background: hasVoted ? 'var(--ac-a08)' : 'transparent',
+                    color: hasVoted ? 'var(--c-ac)' : 'var(--c-tx3)',
+                    transition: 'all 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: hasVoted ? '0 0 10px var(--ac-a12)' : 'none',
+                }}
             >
-                <ChevronUp className="w-4 h-4" strokeWidth={hasVoted ? 3 : 2} />
+                <ChevronUp style={{ width: 16, height: 16 }} strokeWidth={hasVoted ? 3 : 2} />
             </motion.button>
-            <div className={`font-mono text-[10px] font-bold w-6 text-center flex items-center justify-center ${hasVoted ? 'text-doj-gold' : 'text-slate-500'}`}>
-                {isVoting ? <Loader2 className="w-2.5 h-2.5 animate-spin text-slate-400" /> : upvotes}
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, width: 24, textAlign: 'center', color: hasVoted ? 'var(--c-ac)' : 'var(--c-tx3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isVoting ? <Loader2 style={{ width: 10, height: 10, animation: 'spin 1s linear infinite' }} /> : upvotes}
             </div>
         </div>
     );
 }
 
-// Utility to derive callsign
 function getCallsign(authorUsername, authorEmail, authorId) {
-    if (authorUsername) {
-        return authorUsername.toUpperCase();
-    }
-    if (authorEmail) {
-        const username = authorEmail.split('@')[0];
-        return 'AGENT-' + username.toUpperCase().replace(/\./g, '-');
-    }
+    if (authorUsername) return authorUsername.toUpperCase();
+    if (authorEmail) return 'AGENT-' + authorEmail.split('@')[0].toUpperCase().replace(/\./g, '-');
     return 'AGENT-' + authorId.slice(0, 6).toUpperCase();
 }
 
-// Utility to format timestamp
 function formatTimestamp(ts) {
     const d = new Date(ts);
     const yyyy = d.getFullYear();
@@ -103,15 +93,9 @@ export default function IntelReportPanel({ file, user, userProfile }) {
     useEffect(() => {
         const reportsRef = collection(db, "evidenceFiles", fileDocId, "intelReports");
         const q = query(reportsRef, orderBy("createdAt", "asc"));
-
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setReports(data);
+            setReports(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
-
         return () => unsubscribe();
     }, [fileDocId]);
 
@@ -122,34 +106,23 @@ export default function IntelReportPanel({ file, user, userProfile }) {
 
         setSubmitting(true);
 
-        // Check global daily limit: max 5 per day per user
-        // We do a collectionGroup query to find all reports by this user today.
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const startOfDay = today.getTime();
 
         try {
             const reportsGroupRef = collectionGroup(db, 'intelReports');
-            const dailyQ = query(
-                reportsGroupRef,
-                where("authorId", "==", user.uid),
-                where("createdAt", ">=", startOfDay)
-            );
+            const dailyQ = query(reportsGroupRef, where("authorId", "==", user.uid), where("createdAt", ">=", startOfDay));
             const dailySnap = await getDocs(dailyQ);
-
             if (dailySnap.size >= 5) {
                 alert("SECURITY PROTOCOL VIOLATION: YOU HAVE REACHED YOUR DAILY INTEL REPORT LIMIT (5).");
                 setSubmitting(false);
                 return;
             }
         } catch (err) {
-            console.error("Failed to check daily limit, proceeding anyway to avoid blocking valid usage without index:", err);
-            // If the index for the collection group doesn't exist, it will throw. We'll fallback to local check if it fails.
+            console.error("Failed to check daily limit:", err);
             const todayStr = new Date().toDateString();
-            const todaysReports = reports.filter(r =>
-                r.authorId === user.uid &&
-                new Date(r.createdAt).toDateString() === todayStr
-            );
+            const todaysReports = reports.filter(r => r.authorId === user.uid && new Date(r.createdAt).toDateString() === todayStr);
             if (todaysReports.length >= 5) {
                 alert("SECURITY PROTOCOL VIOLATION: YOU HAVE REACHED YOUR DAILY INTEL REPORT LIMIT (5) FOR THIS FILE.");
                 setSubmitting(false);
@@ -159,23 +132,13 @@ export default function IntelReportPanel({ file, user, userProfile }) {
 
         try {
             const reportId = Date.now().toString();
-            const reportRef = doc(db, "evidenceFiles", fileDocId, "intelReports", reportId);
-            await setDoc(reportRef, {
-                id: reportId,
-                text: trimmed,
-                authorId: user.uid,
-                authorEmail: user.email || "",
+            await setDoc(doc(db, "evidenceFiles", fileDocId, "intelReports", reportId), {
+                id: reportId, text: trimmed,
+                authorId: user.uid, authorEmail: user.email || "",
                 authorUsername: userProfile?.username || "",
-                createdAt: Date.now(),
-                upvotes: 0
+                createdAt: Date.now(), upvotes: 0,
             });
-
-            // Update parent document counter
-            const parentRef = doc(db, "evidenceFiles", fileDocId);
-            await updateDoc(parentRef, {
-                commentCount: increment(1)
-            });
-
+            await updateDoc(doc(db, "evidenceFiles", fileDocId), { commentCount: increment(1) });
             setText("");
         } catch (err) {
             console.error("Failed to submit report:", err);
@@ -187,14 +150,8 @@ export default function IntelReportPanel({ file, user, userProfile }) {
 
     const handleDelete = async (reportId) => {
         try {
-            const reportRef = doc(db, "evidenceFiles", fileDocId, "intelReports", reportId);
-            await deleteDoc(reportRef);
-
-            // Decrement parent document counter
-            const parentRef = doc(db, "evidenceFiles", fileDocId);
-            await updateDoc(parentRef, {
-                commentCount: increment(-1)
-            });
+            await deleteDoc(doc(db, "evidenceFiles", fileDocId, "intelReports", reportId));
+            await updateDoc(doc(db, "evidenceFiles", fileDocId), { commentCount: increment(-1) });
         } catch (err) {
             console.error("Failed to delete report:", err);
             alert("Error deleting intel report.");
@@ -202,21 +159,19 @@ export default function IntelReportPanel({ file, user, userProfile }) {
     };
 
     return (
-        <div className="bg-slate-900/60 border-t border-slate-700/40 p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4">
-                <span className="text-[10px] font-mono text-slate-500 tracking-widest uppercase">
+        <div className="intel-panel" style={{ padding: 16 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ marginBottom: 14 }}>
+                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--c-tx3)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
                     ▸ INTEL REPORTS [{reports.length}]
                 </span>
             </div>
 
-            <div className="flex flex-col gap-3 mb-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
                 <AnimatePresence>
                     {reports.length === 0 ? (
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="text-xs font-mono text-slate-700 py-2"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--c-tx3)', padding: '6px 0' }}
                         >
                             NO INTEL REPORTS ON FILE
                         </motion.div>
@@ -224,35 +179,42 @@ export default function IntelReportPanel({ file, user, userProfile }) {
                         reports.map(report => (
                             <motion.div
                                 key={report.id}
-                                initial={{ opacity: 0, y: -4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                className="flex border border-slate-700/30 rounded bg-slate-800/30 p-3 border-l-2 border-l-doj-gold/30 relative gap-3"
+                                initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                style={{
+                                    display: 'flex', gap: 10,
+                                    border: '1px solid var(--ac-a12)',
+                                    borderLeft: '2px solid var(--ac-a28)',
+                                    borderRadius: 4,
+                                    background: 'var(--ac-a03)',
+                                    padding: 12, position: 'relative',
+                                }}
                             >
-                                <div className="flex flex-col items-center shrink-0">
+                                <div style={{ flexShrink: 0 }}>
                                     <CommentVoteButton fileId={fileDocId} report={report} user={user} />
                                 </div>
-                                <div className="flex flex-col flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-mono text-doj-gold tracking-wider truncate">
+                                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--c-ac)', letterSpacing: '0.1em', fontWeight: 600 }}>
                                                 {getCallsign(report.authorUsername, report.authorEmail, report.authorId)}
                                             </span>
-                                            <span className="text-[10px] font-mono text-slate-600 shrink-0">
+                                            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--c-tx3)', flexShrink: 0 }}>
                                                 {formatTimestamp(report.createdAt)}
                                             </span>
                                         </div>
                                         {report.authorId === user.uid && (
                                             <button
                                                 onClick={() => handleDelete(report.id)}
-                                                className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--c-tx3)', padding: 4, cursor: 'pointer', transition: 'color 150ms', display: 'flex' }}
                                                 title="Delete Report"
+                                                onMouseOver={e => e.currentTarget.style.color = '#ff2d55'}
+                                                onMouseOut={e => e.currentTarget.style.color = 'var(--c-tx3)'}
                                             >
-                                                <Trash2 className="w-3.5 h-3.5" />
+                                                <Trash2 style={{ width: 14, height: 14 }} />
                                             </button>
                                         )}
                                     </div>
-                                    <div className="font-mono text-slate-300 text-sm whitespace-pre-wrap break-words">
+                                    <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--c-tx)', fontSize: 13, whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.6 }}>
                                         {report.text}
                                     </div>
                                 </div>
@@ -263,24 +225,37 @@ export default function IntelReportPanel({ file, user, userProfile }) {
             </div>
 
             {/* Compose Form */}
-            <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     maxLength={280}
                     placeholder="SUBMIT INTEL REPORT..."
-                    className="w-full bg-slate-800/60 border border-slate-700/50 rounded p-3 font-mono text-sm text-slate-300 focus:outline-none focus:border-doj-gold/50 resize-y min-h-[80px]"
+                    style={{
+                        width: '100%', padding: '10px 12px', borderRadius: 3,
+                        fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--c-tx)',
+                        resize: 'vertical', minHeight: 80, lineHeight: 1.6,
+                        boxSizing: 'border-box',
+                    }}
                 />
-                <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-slate-600">
-                        {text.length}/280
-                    </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--c-tx3)' }}>{text.length}/280</span>
                     <button
                         type="submit"
                         disabled={!text.trim() || submitting}
-                        className="px-4 py-1.5 bg-slate-800 border border-slate-700 hover:border-doj-gold/50 hover:bg-slate-700 text-slate-300 hover:text-doj-gold font-mono text-xs rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        style={{
+                            padding: '6px 16px', borderRadius: 3,
+                            background: 'var(--ac-a08)', border: '1px solid var(--ac-a12)',
+                            color: 'var(--c-tx2)', fontFamily: 'var(--font-mono)', fontSize: 11,
+                            cursor: !text.trim() || submitting ? 'not-allowed' : 'pointer',
+                            opacity: !text.trim() || submitting ? 0.5 : 1,
+                            transition: 'all 150ms', display: 'flex', alignItems: 'center', gap: 6,
+                            letterSpacing: '0.08em', textTransform: 'uppercase',
+                        }}
+                        onMouseOver={e => { if (text.trim() && !submitting) { e.currentTarget.style.borderColor = 'var(--c-ac)'; e.currentTarget.style.color = 'var(--c-ac)'; }}}
+                        onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--ac-a12)'; e.currentTarget.style.color = 'var(--c-tx2)'; }}
                     >
-                        {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        {submitting && <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />}
                         TRANSMIT REPORT
                     </button>
                 </div>

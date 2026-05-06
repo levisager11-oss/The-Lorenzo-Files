@@ -37,11 +37,11 @@ export default function MobileFileCard({ file, fileNumber, onRedactedClick, user
             <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '12px 14px 10px',
-                borderBottom: '1px solid rgba(0,212,255,0.05)',
+                borderBottom: '1px solid var(--ac-a05)',
                 opacity: isDeleting ? 0.3 : 1, transition: 'opacity 300ms',
             }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, color: '#3d5a78', fontWeight: 600, flexShrink: 0 }}>{fileNum}</span>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, color: 'var(--c-tx3)', fontWeight: 600, flexShrink: 0 }}>{fileNum}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-ac)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><rect width="6" height="5" x="9" y="13" rx="1" /><path d="M10 13v-1a2 2 0 0 1 4 0v1" />
                 </svg>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -50,19 +50,19 @@ export default function MobileFileCard({ file, fileNumber, onRedactedClick, user
                             href={file.downloadURL} target="_blank" rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
                             style={{
-                                fontFamily: 'var(--font-display)', fontSize: 13, color: '#00d4ff',
+                                fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--c-ac)',
                                 fontWeight: 600, textDecoration: 'none', overflow: 'hidden',
                                 textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block',
-                                letterSpacing: '0.03em', textShadow: '0 0 8px rgba(0,212,255,0.08)',
+                                letterSpacing: '0.03em', textShadow: '0 0 8px var(--ac-a08)',
                             }}
                         >{file.name}</a>
                     ) : (
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: '#dceeff', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--c-tx)', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {file.name}
                         </span>
                     )}
                     {file.uploaderUsername && (
-                        <div style={{ fontSize: 8, color: '#3d5a78', letterSpacing: '0.18em', marginTop: 2, fontFamily: 'var(--font-display)' }}>
+                        <div style={{ fontSize: 8, color: 'var(--c-tx3)', letterSpacing: '0.18em', marginTop: 2, fontFamily: 'var(--font-display)' }}>
                             BY: {file.uploaderUsername.toUpperCase()}
                         </div>
                     )}
@@ -71,13 +71,13 @@ export default function MobileFileCard({ file, fileNumber, onRedactedClick, user
             </div>
 
             {/* Middle: suspect + date/size */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid rgba(0,212,255,0.05)' }}>
-                <div style={{ padding: '8px 14px', borderRight: '1px solid rgba(0,212,255,0.05)' }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.25em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 3 }}>SUSPECT</div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: '#7aa8cc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{suspects}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--ac-a05)' }}>
+                <div style={{ padding: '8px 14px', borderRight: '1px solid var(--ac-a05)' }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.25em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 3 }}>SUSPECT</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--c-tx2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{suspects}</div>
                 </div>
                 <div style={{ padding: '8px 14px' }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.25em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 3 }}>DATE / SIZE</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.25em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 3 }}>DATE / SIZE</div>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: '#7aa8cc' }}>{file.date} · {file.size}</div>
                 </div>
             </div>
@@ -92,10 +92,10 @@ export default function MobileFileCard({ file, fileNumber, onRedactedClick, user
                     onClick={e => { e.stopPropagation(); setShowReports(v => !v); }}
                     style={{
                         flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: showReports ? 'rgba(0,212,255,0.08)' : 'transparent',
-                        color: showReports ? '#00d4ff' : '#3d5a78',
+                        background: showReports ? 'var(--ac-a08)' : 'transparent',
+                        color: showReports ? 'var(--c-ac)' : 'var(--c-tx3)',
                         padding: '7px 10px', borderRadius: 2,
-                        border: `1px solid ${showReports ? 'rgba(0,212,255,0.28)' : 'rgba(0,212,255,0.12)'}`,
+                        border: `1px solid ${showReports ? 'var(--ac-a28)' : 'var(--ac-a12)'}`,
                         transition: 'all 150ms', cursor: 'pointer',
                     }}
                 >

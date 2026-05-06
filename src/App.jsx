@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import useTheme from './hooks/useTheme';
 import RadarSeal from './components/RadarSeal';
 import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
@@ -37,10 +38,10 @@ function LoadingScreen({ message }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
       <RadarSeal size={90} />
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 5vw, 3.5rem)', fontWeight: 700, color: '#00d4ff', letterSpacing: '0.25em', textShadow: '0 0 30px rgba(0,212,255,0.35)' }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 5vw, 3.5rem)', fontWeight: 700, color: 'var(--c-ac)', letterSpacing: '0.25em', textShadow: '0 0 30px var(--ac-a35)' }}>
         THE LORENZO FILES
       </div>
-      <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#7aa8cc', textTransform: 'uppercase', fontFamily: 'var(--font-display)' }}>
+      <div style={{ fontSize: 10, letterSpacing: '0.3em', color: 'var(--c-tx2)', textTransform: 'uppercase', fontFamily: 'var(--font-display)' }}>
         {message} <span className="cursor-blink">█</span>
       </div>
     </div>
@@ -83,6 +84,7 @@ function parseSize(file) {
 }
 
 export default function App() {
+  const [lightMode, toggleLightMode] = useTheme();
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -393,7 +395,7 @@ export default function App() {
       <SpeedInsights />
 
       <div className="relative z-10">
-        <Header username={userProfile?.username} />
+        <Header username={userProfile?.username} lightMode={lightMode} onToggleLightMode={toggleLightMode} />
 
         {/* Classification Banner */}
         <ClassificationBanner />
@@ -407,17 +409,17 @@ export default function App() {
           {/* Controls bar */}
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14, padding: '0 2px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.2em', color: '#3d5a78' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--c-tx3)' }}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>
                 {files.length} FILES IN ARCHIVE
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.2em', color: '#3d5a78' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--c-tx3)' }}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                 {filteredFiles.length} SHOWING
               </div>
               {/* Security indicator */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.2em', color: '#3d5a78' }}>SEC:</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.2em', color: 'var(--c-tx3)' }}>SEC:</span>
                 {[1, 2, 3].map(l => (
                   <div key={l} style={{ width: 7, height: 7, borderRadius: 1, background: securityLevel >= l ? '#ff2d55' : 'rgba(0,212,255,0.12)', transition: 'all 300ms', boxShadow: securityLevel >= l ? '0 0 6px rgba(255,45,85,0.6)' : 'none' }} />
                 ))}
@@ -444,12 +446,12 @@ export default function App() {
                     display: 'flex', alignItems: 'center', gap: 7,
                     padding: '7px 14px', borderRadius: 3,
                     fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.18em',
-                    background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.28)',
-                    color: '#00d4ff', cursor: uploading ? 'not-allowed' : 'pointer',
+                    background: 'var(--ac-a08)', border: '1px solid var(--ac-a28)',
+                    color: 'var(--c-ac)', cursor: uploading ? 'not-allowed' : 'pointer',
                     transition: 'all 150ms', textTransform: 'uppercase', fontWeight: 600,
                     opacity: uploading || showUploadModal ? 0.5 : 1,
                   }}
-                  onMouseOver={e => { if (!uploading) { e.currentTarget.style.background = 'rgba(0,212,255,0.15)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,255,0.35)'; }}}
+                  onMouseOver={e => { if (!uploading) { e.currentTarget.style.background = 'var(--ac-a12)'; e.currentTarget.style.boxShadow = '0 0 12px var(--ac-a35)'; }}}
                   onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -463,7 +465,7 @@ export default function App() {
 
           {/* Evidence table */}
           <div className="glass-card" style={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: 20, right: 28, pointerEvents: 'none', fontFamily: 'var(--font-display)', fontSize: '2.2rem', fontWeight: 700, color: 'rgba(0,212,255,0.04)', transform: 'rotate(-10deg)', letterSpacing: '0.2em', zIndex: 1 }}>CLASSIFIED</div>
+            <div style={{ position: 'absolute', top: 20, right: 28, pointerEvents: 'none', fontFamily: 'var(--font-display)', fontSize: '2.2rem', fontWeight: 700, color: 'var(--ac-a08)', transform: 'rotate(-10deg)', letterSpacing: '0.2em', zIndex: 1 }}>CLASSIFIED</div>
 
             {!isMobile && (
               <div className="tbl-head">
@@ -485,8 +487,8 @@ export default function App() {
               )
             )) : (
               <div style={{ padding: '64px 24px', textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, letterSpacing: '0.28em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 8 }}>NO MATCHING FILES FOUND</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.18em', color: '#3d5a78', opacity: 0.5 }}>ADJUST SEARCH PARAMETERS</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, letterSpacing: '0.28em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 8 }}>NO MATCHING FILES FOUND</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--c-tx3)', opacity: 0.5 }}>ADJUST SEARCH PARAMETERS</div>
               </div>
             )}
           </div>
@@ -494,10 +496,10 @@ export default function App() {
           {/* Footer */}
           <footer style={{ marginTop: 32, paddingBottom: 28, textAlign: 'center' }}>
             <div className="animated-border" style={{ marginBottom: 20 }} />
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.3em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 5 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.3em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 5 }}>
               DEPARTMENT OF LORENZO — INTELLIGENCE MANAGEMENT SYSTEM v4.2.0 // DELOS NETWORK
             </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 8, letterSpacing: '0.22em', color: '#3d5a78', opacity: 0.4, textTransform: 'uppercase' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 8, letterSpacing: '0.22em', color: 'var(--c-tx3)', opacity: 0.4, textTransform: 'uppercase' }}>
               UNAUTHORIZED ACCESS IS PUNISHABLE BY HAVING TO LISTEN TO LORENZO&apos;S KARAOKE
             </div>
           </footer>
