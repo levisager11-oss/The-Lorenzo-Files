@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import ThemeToggle from './ThemeToggle';
+import useTheme from '../hooks/useTheme';
 
 export default function UsernamePrompt({ user, onComplete }) {
+    const [lightMode, toggleLightMode] = useTheme();
     const [username, setUsername] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -28,22 +31,26 @@ export default function UsernamePrompt({ user, onComplete }) {
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, position: 'relative' }}>
+            <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 200 }}>
+                <ThemeToggle lightMode={lightMode} onToggle={toggleLightMode} />
+            </div>
+
             <div className="slide-up" style={{ width: '100%', maxWidth: 420, position: 'relative' }}>
-                <div style={{ position: 'absolute', inset: -1, borderRadius: 4, border: '1px solid rgba(0,212,255,0.28)', boxShadow: '0 0 60px rgba(0,212,255,0.35)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', inset: -1, borderRadius: 4, border: '1px solid var(--ac-a28)', boxShadow: '0 0 60px var(--ac-a35)', pointerEvents: 'none' }} />
                 <div className="hud-corners" style={{ borderRadius: 4, overflow: 'hidden' }}>
                     <div className="hud-br" />
-                    <div style={{ background: 'rgba(5,8,14,0.95)', backdropFilter: 'blur(24px)' }}>
+                    <div style={{ background: 'var(--c-bg-card)', backdropFilter: 'blur(24px)' }}>
                         <div className="top-bar" />
                         <div style={{ padding: '36px 36px 28px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24, gap: 14 }}>
-                                <div style={{ width: 64, height: 64, borderRadius: '50%', border: '2px solid #00d4ff', background: 'rgba(0,212,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(0,212,255,0.35)' }}>
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                <div style={{ width: 64, height: 64, borderRadius: '50%', border: '2px solid var(--c-ac)', background: 'var(--ac-a08)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px var(--ac-a35)' }}>
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-ac)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                                     </svg>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 700, color: '#00d4ff', letterSpacing: '0.18em', textShadow: '0 0 16px rgba(0,212,255,0.35)' }}>INITIALIZE AGENT PROFILE</div>
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.4em', color: '#7aa8cc', marginTop: 5, textTransform: 'uppercase' }}>ASSIGN YOUR OPERATIVE CALLSIGN</div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 700, color: 'var(--c-ac)', letterSpacing: '0.18em', textShadow: '0 0 16px var(--ac-a35)' }}>INITIALIZE AGENT PROFILE</div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--c-tx2)', marginTop: 5, textTransform: 'uppercase' }}>ASSIGN YOUR OPERATIVE CALLSIGN</div>
                                 </div>
                             </div>
 
@@ -55,25 +62,25 @@ export default function UsernamePrompt({ user, onComplete }) {
 
                             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 <div>
-                                    <label style={{ display: 'block', fontFamily: 'var(--font-display)', fontSize: 8, letterSpacing: '0.28em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 6 }}>CALLSIGN / USERNAME</label>
+                                    <label style={{ display: 'block', fontFamily: 'var(--font-display)', fontSize: 8, letterSpacing: '0.28em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 6 }}>CALLSIGN / USERNAME</label>
                                     <input
                                         type="text" value={username} onChange={e => setUsername(e.target.value)}
                                         placeholder="e.g. SHADOW-ACTUAL" autoFocus disabled={submitting}
                                         style={{ width: '100%', padding: '12px', borderRadius: 3, fontFamily: 'var(--font-display)', fontSize: 13, letterSpacing: '0.08em', boxSizing: 'border-box' }}
                                     />
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.15em', color: '#3d5a78', marginTop: 4, textTransform: 'uppercase' }}>3–20 chars · Letters, numbers, hyphens, underscores</div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.15em', color: 'var(--c-tx3)', marginTop: 4, textTransform: 'uppercase' }}>3–20 chars · Letters, numbers, hyphens, underscores</div>
                                 </div>
 
                                 {username.trim().length >= 3 && (
-                                    <div style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.28)', borderRadius: 3, padding: '10px 14px' }}>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.2em', color: '#3d5a78', textTransform: 'uppercase', marginBottom: 4 }}>OPERATIVE DESIGNATION</div>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.15em' }}>AGENT-{username.trim().toUpperCase()}</div>
+                                    <div style={{ background: 'var(--ac-a08)', border: '1px solid var(--ac-a28)', borderRadius: 3, padding: '10px 14px' }}>
+                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.2em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 4 }}>OPERATIVE DESIGNATION</div>
+                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--c-ac)', letterSpacing: '0.15em' }}>AGENT-{username.trim().toUpperCase()}</div>
                                     </div>
                                 )}
 
                                 <button type="submit" disabled={submitting || !username.trim()}
-                                    style={{ width: '100%', padding: '13px', borderRadius: 3, background: '#00d4ff', color: '#020608', border: 'none', fontFamily: 'var(--font-display)', fontSize: 12, letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase', cursor: submitting || !username.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !username.trim() ? 0.35 : 1, transition: 'all 150ms', marginTop: 4 }}
-                                    onMouseOver={e => { if (!submitting && username.trim()) e.currentTarget.style.boxShadow = '0 0 24px rgba(0,212,255,0.35)'; }}
+                                    style={{ width: '100%', padding: '13px', borderRadius: 3, background: 'var(--c-ac)', color: lightMode ? '#fff' : '#020608', border: 'none', fontFamily: 'var(--font-display)', fontSize: 12, letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase', cursor: submitting || !username.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !username.trim() ? 0.35 : 1, transition: 'all 150ms', marginTop: 4 }}
+                                    onMouseOver={e => { if (!submitting && username.trim()) e.currentTarget.style.boxShadow = '0 0 24px var(--ac-a35)'; }}
                                     onMouseOut={e => e.currentTarget.style.boxShadow = 'none'}>
                                     {submitting ? 'INITIALIZING...' : 'CONFIRM IDENTITY'}
                                 </button>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import useTheme from './hooks/useTheme';
 import RadarSeal from './components/RadarSeal';
 import Header from './components/Header';
 import SearchPortal from './components/SearchPortal';
@@ -83,7 +84,7 @@ function parseSize(file) {
 }
 
 export default function App() {
-  const [lightMode, setLightMode] = useState(() => localStorage.getItem('theme') === 'light');
+  const [lightMode, toggleLightMode] = useTheme();
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -110,14 +111,6 @@ export default function App() {
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
 
   const isMobile = useIsMobile();
-
-  // Sync theme to document and localStorage
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', lightMode ? 'light' : 'dark');
-    localStorage.setItem('theme', lightMode ? 'light' : 'dark');
-  }, [lightMode]);
-
-  const toggleLightMode = () => setLightMode(v => !v);
 
   // Auth Listener
   useEffect(() => {
