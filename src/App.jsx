@@ -37,7 +37,7 @@ import MemeEasterEgg from './components/MemeEasterEgg';
 import AdSenseAd from './components/AdSenseAd';
 import ProfilePage from './components/ProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
-import GamesPage from './components/GamesPage';
+import ChatPanel from './components/ChatPanel';
 import DatabasePicker from './components/DatabasePicker';
 import useCurrentDatabase from './hooks/useCurrentDatabase';
 import { leaveCurrentDatabase } from './lib/databases';
@@ -118,7 +118,8 @@ export default function App() {
   const [fileToPurge, setFileToPurge] = useState(null);
 
   // Page navigation
-  const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard' | 'games'
+  const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard'
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Dev Menu State
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
@@ -127,7 +128,7 @@ export default function App() {
   const onlineCount = useOnlineCount(user?.uid);
 
   const currentDbId = userProfile?.currentDatabaseId || null;
-  const { database: currentDatabase, membership: currentMembership, isMain, loading: dbLoading } = useCurrentDatabase(user, currentDbId);
+  const { database: currentDatabase, membership: currentMembership, loading: dbLoading } = useCurrentDatabase(user, currentDbId);
 
   // Auth Listener
   useEffect(() => {
@@ -449,10 +450,9 @@ export default function App() {
             onlineCount={onlineCount}
             onShowProfile={() => setCurrentPage('profile')}
             onShowLeaderboard={() => setCurrentPage('leaderboard')}
-            onShowGames={() => setCurrentPage('games')}
+            onShowChat={() => setChatOpen(true)}
             databaseName={currentDatabase?.name}
             joinCode={currentDatabase?.joinCode}
-            isMain={isMain}
             onSwitchDatabase={handleSwitchDatabase}
           />
 
@@ -595,8 +595,16 @@ export default function App() {
       {currentPage === 'leaderboard' && (
         <LeaderboardPage user={user} files={files} dbId={currentDbId} database={currentDatabase} onClose={() => setCurrentPage('main')} />
       )}
-      {currentPage === 'games' && isMain && (
-        <GamesPage user={user} userProfile={userProfile} onClose={() => setCurrentPage('main')} />
+
+      {chatOpen && (
+        <ChatPanel
+          key={currentDbId}
+          user={user}
+          userProfile={userProfile}
+          dbId={currentDbId}
+          databaseName={currentDatabase?.name}
+          onClose={() => setChatOpen(false)}
+        />
       )}
 
       {/* Developer Menu (levi.sager11@gmail.com only) */}

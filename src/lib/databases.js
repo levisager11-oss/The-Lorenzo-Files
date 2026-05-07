@@ -19,8 +19,6 @@ const CODE_LEN = 4;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
 const MAX_CODE_ATTEMPTS = 8;
 
-export const MAIN_DB_ID = "main";
-
 export function generateJoinCode() {
     let out = "";
     for (let i = 0; i < CODE_LEN; i += 1) {
@@ -70,8 +68,6 @@ export async function createDatabase({ user, userProfile, name }) {
             name: trimmed,
             ownerId: user.uid,
             joinCode: code,
-            isMain: false,
-            requiresUniversalPassword: false,
             createdAt: serverTimestamp(),
             memberCount: 1,
         });
@@ -84,22 +80,15 @@ export async function createDatabase({ user, userProfile, name }) {
         tx.set(doc(db, "users", user.uid), { currentDatabaseId: dbId }, { merge: true });
     });
 
-    return { id: dbId, joinCode: code, name: trimmed, isMain: false };
+    return { id: dbId, joinCode: code, name: trimmed };
 }
 
-export async function joinDatabase({ user, userProfile, code, sitePassword }) {
+export async function joinDatabase({ user, userProfile, code }) {
     const normalized = normalizeCode(code);
     if (normalized.length < 3) throw new Error("invalid-code");
 
     const target = await findDatabaseByCode(normalized);
     if (!target) throw new Error("not-found");
-
-    if (target.requiresUniversalPassword) {
-        const expected = import.meta.env.VITE_SITE_PASSWORD;
-        if (!expected || sitePassword !== expected) {
-            throw new Error("invalid-site-password");
-        }
-    }
 
     const memberRef = doc(db, "databases", target.id, "members", user.uid);
     const memberSnap = await getDoc(memberRef);

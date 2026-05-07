@@ -20,15 +20,12 @@ export default function DatabasePicker({ user, userProfile, onJoined }) {
     const [lightMode, toggleLightMode] = useTheme();
     const [mode, setMode] = useState('choose'); // 'choose' | 'join' | 'create'
     const [code, setCode] = useState('');
-    const [sitePassword, setSitePassword] = useState('');
-    const [needsSitePassword, setNeedsSitePassword] = useState(false);
     const [name, setName] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const reset = () => {
-        setMode('choose'); setCode(''); setSitePassword('');
-        setNeedsSitePassword(false); setName(''); setError('');
+        setMode('choose'); setCode(''); setName(''); setError('');
     };
 
     const handleSignOut = () => signOut(auth).catch(console.error);
@@ -39,18 +36,12 @@ export default function DatabasePicker({ user, userProfile, onJoined }) {
             const result = await joinDatabase({
                 user, userProfile,
                 code: normalizeCode(code),
-                sitePassword: needsSitePassword ? sitePassword : undefined,
             });
             if (onJoined) onJoined(result);
         } catch (err) {
             if (err.message === 'invalid-code') setError('ENTER A VALID 4-CHARACTER CODE.');
             else if (err.message === 'not-found') setError('NO DATABASE FOUND FOR THAT CODE.');
-            else if (err.message === 'invalid-site-password') {
-                setNeedsSitePassword(true);
-                setError(needsSitePassword ? 'INVALID UNIVERSAL PASSWORD.' : 'THIS DATABASE REQUIRES A UNIVERSAL PASSWORD.');
-            } else {
-                console.error(err); setError('FAILED TO JOIN. TRY AGAIN.');
-            }
+            else { console.error(err); setError('FAILED TO JOIN. TRY AGAIN.'); }
         } finally { setLoading(false); }
     };
 
@@ -127,18 +118,6 @@ export default function DatabasePicker({ user, userProfile, onJoined }) {
                                             style={{ ...inputStyle, letterSpacing: '0.4em', textAlign: 'center', fontSize: 18, fontWeight: 700 }}
                                         />
                                     </div>
-                                    {needsSitePassword && (
-                                        <div>
-                                            <label style={labelStyle}>UNIVERSAL PASSWORD</label>
-                                            <input type="password" value={sitePassword}
-                                                onChange={e => setSitePassword(e.target.value)}
-                                                placeholder="••••••••" required autoFocus
-                                                style={{ ...inputStyle, letterSpacing: '0.2em' }} />
-                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: 7, letterSpacing: '0.18em', color: 'var(--c-tx3)', marginTop: 4, textTransform: 'uppercase' }}>
-                                                The original Lorenzo Files requires a universal password.
-                                            </div>
-                                        </div>
-                                    )}
                                     <button type="submit" disabled={loading || !code.trim()}
                                         style={{ width: '100%', padding: '13px', borderRadius: 3, background: 'var(--c-ac)', color: lightMode ? '#fff' : '#020608', border: 'none', fontFamily: 'var(--font-display)', fontSize: 12, letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase', cursor: loading ? 'wait' : 'pointer', opacity: loading || !code.trim() ? 0.5 : 1, transition: 'all 150ms', marginTop: 4 }}>
                                         {loading ? 'JOINING...' : 'JOIN DEPARTMENT'}
