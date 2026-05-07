@@ -34,6 +34,7 @@ import LoginScreen from './components/LoginScreen';
 import EmailVerificationGate from './components/EmailVerificationGate';
 import DevMenu from './components/DevMenu';
 import MemeEasterEgg from './components/MemeEasterEgg';
+import AdSenseAd from './components/AdSenseAd';
 import ProfilePage from './components/ProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import { Analytics } from '@vercel/analytics/react';
@@ -500,13 +501,20 @@ export default function App() {
               </div>
             )}
 
-            {filteredFiles.length > 0 ? filteredFiles.map((file, index) => (
-              isMobile ? (
+            {filteredFiles.length > 0 ? filteredFiles.flatMap((file, index) => {
+              const row = isMobile ? (
                 <MobileFileCard key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} />
               ) : (
                 <FileRow key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} />
-              )
-            )) : (
+              );
+              const showAd = (index + 1) % 5 === 0 && index + 1 < filteredFiles.length;
+              return showAd ? [
+                row,
+                <div key={`ad-${index}`} style={{ padding: '8px 12px', background: 'rgba(0,212,255,0.02)', borderTop: '1px solid rgba(0,212,255,0.06)', borderBottom: '1px solid rgba(0,212,255,0.06)' }}>
+                  <AdSenseAd adSlot="3814703645" adFormat="auto" style={{ minHeight: 90 }} />
+                </div>
+              ] : [row];
+            }) : (
               <div style={{ padding: '64px 24px', textAlign: 'center' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, letterSpacing: '0.28em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 8 }}>NO MATCHING FILES FOUND</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--c-tx3)', opacity: 0.5 }}>ADJUST SEARCH PARAMETERS</div>
@@ -516,6 +524,9 @@ export default function App() {
 
           {/* Footer */}
           <footer style={{ marginTop: 32, paddingBottom: 28, textAlign: 'center' }}>
+            <div style={{ marginBottom: 20 }}>
+              <AdSenseAd adSlot="3814703645" adFormat="auto" style={{ minHeight: 90 }} />
+            </div>
             <div className="animated-border" style={{ marginBottom: 20 }} />
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.3em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 5 }}>
               DEPARTMENT OF LORENZO — INTELLIGENCE MANAGEMENT SYSTEM v4.2.0 // DELOS NETWORK
