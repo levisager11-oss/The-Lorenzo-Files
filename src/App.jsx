@@ -511,7 +511,7 @@ export default function App() {
               return showAd ? [
                 row,
                 <div key={`ad-${index}`} style={{ padding: '8px 12px', background: 'rgba(0,212,255,0.02)', borderTop: '1px solid rgba(0,212,255,0.06)', borderBottom: '1px solid rgba(0,212,255,0.06)' }}>
-                  <AdSenseAd adSlot="YOUR_AD_SLOT_ID" adFormat="auto" style={{ minHeight: 90 }} />
+                  <AdSenseAd adSlot="3814703645" adFormat="auto" style={{ minHeight: 90 }} />
                 </div>
               ] : [row];
             }) : (
@@ -525,7 +525,7 @@ export default function App() {
           {/* Footer */}
           <footer style={{ marginTop: 32, paddingBottom: 28, textAlign: 'center' }}>
             <div style={{ marginBottom: 20 }}>
-              <AdSenseAd adSlot="YOUR_AD_SLOT_ID" adFormat="auto" style={{ minHeight: 90 }} />
+              <AdSenseAd adSlot="3814703645" adFormat="auto" style={{ minHeight: 90 }} />
             </div>
             <div className="animated-border" style={{ marginBottom: 20 }} />
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.3em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 5 }}>
