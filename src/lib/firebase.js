@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider } from "firebase/auth";
 
@@ -20,3 +21,15 @@ export const storage = getStorage(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export { onAuthStateChanged };
+
+// RTDB powers the per-department live chat. If the database URL is missing
+// or malformed, fall back to null so the rest of the app still loads.
+let rtdb = null;
+try {
+    if (import.meta.env.VITE_FIREBASE_DATABASE_URL) {
+        rtdb = getDatabase(app);
+    }
+} catch (e) {
+    console.warn('[Chat] Firebase RTDB unavailable:', e.message);
+}
+export { rtdb };

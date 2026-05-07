@@ -37,6 +37,7 @@ import MemeEasterEgg from './components/MemeEasterEgg';
 import AdSenseAd from './components/AdSenseAd';
 import ProfilePage from './components/ProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
+import ChatPanel from './components/ChatPanel';
 import DatabasePicker from './components/DatabasePicker';
 import useCurrentDatabase from './hooks/useCurrentDatabase';
 import { leaveCurrentDatabase } from './lib/databases';
@@ -118,6 +119,7 @@ export default function App() {
 
   // Page navigation
   const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard'
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Dev Menu State
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
@@ -448,6 +450,7 @@ export default function App() {
             onlineCount={onlineCount}
             onShowProfile={() => setCurrentPage('profile')}
             onShowLeaderboard={() => setCurrentPage('leaderboard')}
+            onShowChat={() => setChatOpen(true)}
             databaseName={currentDatabase?.name}
             joinCode={currentDatabase?.joinCode}
             onSwitchDatabase={handleSwitchDatabase}
@@ -591,6 +594,17 @@ export default function App() {
       )}
       {currentPage === 'leaderboard' && (
         <LeaderboardPage user={user} files={files} dbId={currentDbId} database={currentDatabase} onClose={() => setCurrentPage('main')} />
+      )}
+
+      {chatOpen && (
+        <ChatPanel
+          key={currentDbId}
+          user={user}
+          userProfile={userProfile}
+          dbId={currentDbId}
+          databaseName={currentDatabase?.name}
+          onClose={() => setChatOpen(false)}
+        />
       )}
 
       {/* Developer Menu (levi.sager11@gmail.com only) */}

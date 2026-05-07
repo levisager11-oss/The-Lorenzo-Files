@@ -5,7 +5,7 @@ import RadarSeal from './RadarSeal';
 import ThemeToggle from './ThemeToggle';
 import useIsMobile from '../hooks/useIsMobile';
 
-export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard, databaseName, joinCode, onSwitchDatabase }) {
+export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard, onShowChat, databaseName, joinCode, onSwitchDatabase }) {
     const [time, setTime] = useState(new Date());
     const isMobile = useIsMobile();
     const clickCount = { current: 0, timer: null };
@@ -128,6 +128,28 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                             </div>
                         )}
                         <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                            {/* Live chat */}
+                            {onShowChat && (
+                                <button
+                                    onClick={onShowChat}
+                                    title="Open department chat"
+                                    style={{
+                                        background: 'rgba(0,255,136,0.08)', color: '#00ff88',
+                                        border: '1px solid rgba(0,255,136,0.25)',
+                                        padding: isMobile ? '5px 8px' : '5px 10px', borderRadius: 2,
+                                        display: 'flex', alignItems: 'center', gap: 4,
+                                        cursor: 'pointer', transition: 'all 150ms',
+                                        fontFamily: 'var(--font-display)', fontWeight: 600,
+                                    }}
+                                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.18)'; e.currentTarget.style.borderColor = '#00ff88'; }}
+                                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.08)'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.25)'; }}
+                                >
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                    {!isMobile && <span style={{ fontSize: 9, letterSpacing: '0.1em' }}>COMMS</span>}
+                                </button>
+                            )}
                             {/* Switch department */}
                             {onSwitchDatabase && (
                                 <button
