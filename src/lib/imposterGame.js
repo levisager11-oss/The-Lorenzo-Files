@@ -154,11 +154,14 @@ export async function startRound({ code, room }) {
 
     const updates = {};
 
-    // Wipe any previous secrets for this room and write fresh per-player ones
-    updates[`gameSecrets/${code}`] = null;
+    // Build per-player secrets and write them as a single set() — replaces the
+    // whole gameSecrets/${code} subtree atomically, which clears any stale
+    // entries from prior rounds. Doing this in the multi-path update() below
+    // would fail because parent + child paths can't coexist in one update.
+    const secretsPayload = {};
     playerUids.forEach((puid) => {
         const isImposter = puid === imposterUid;
-        updates[`gameSecrets/${code}/${puid}`] = {
+        secretsPayload[puid] = {
             word: isImposter ? decoyWord : word,
             isImposter,
             createdAt: serverTimestamp(),
@@ -183,6 +186,7 @@ export async function startRound({ code, room }) {
     updates[`gameRooms/${code}/votes`] = null;
     updates[`gameRooms/${code}/updatedAt`] = serverTimestamp();
 
+    await set(dbRef(requireRtdb(), `gameSecrets/${code}`), secretsPayload);
     await update(dbRef(requireRtdb()), updates);
 
     return { imposterUid, word };
