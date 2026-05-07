@@ -22,8 +22,14 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export { onAuthStateChanged };
 
-// RTDB is only needed for the games feature; guard against missing env var
-// so the rest of the app still loads during local dev before RTDB is enabled.
-export const rtdb = import.meta.env.VITE_FIREBASE_DATABASE_URL
-    ? getDatabase(app)
-    : null;
+// RTDB is only needed for the games feature. Wrap in try/catch so a missing
+// or malformed VITE_FIREBASE_DATABASE_URL never crashes the rest of the app.
+let rtdb = null;
+try {
+    if (import.meta.env.VITE_FIREBASE_DATABASE_URL) {
+        rtdb = getDatabase(app);
+    }
+} catch (e) {
+    console.warn('[Games] Firebase RTDB unavailable:', e.message);
+}
+export { rtdb };
