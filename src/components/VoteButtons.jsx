@@ -3,24 +3,24 @@ import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { voteOnFile } from '../lib/voteOnFile';
 
-export default function VoteButtons({ file, user }) {
+export default function VoteButtons({ file, user, dbId }) {
     const [myVote, setMyVote] = useState(null);
     const [isVoting, setIsVoting] = useState(false);
 
     useEffect(() => {
-        if (!user || !file.id) return;
-        const ref = doc(db, "evidenceFiles", file.docId || file.id.toString(), "voters", user.uid);
+        if (!user || !file.id || !dbId) return;
+        const ref = doc(db, "databases", dbId, "evidenceFiles", file.docId || file.id.toString(), "voters", user.uid);
         const unsub = onSnapshot(ref, (snap) => {
             setMyVote(snap.exists() ? snap.data().vote : null);
         });
         return unsub;
-    }, [file.id, file.docId, user]);
+    }, [file.id, file.docId, user, dbId]);
 
     const handleVote = async (type) => {
-        if (isVoting || !user) return;
+        if (isVoting || !user || !dbId) return;
         setIsVoting(true);
         try {
-            await voteOnFile(file.docId || file.id.toString(), user.uid, type);
+            await voteOnFile(dbId, file.docId || file.id.toString(), user.uid, type);
         } catch (error) {
             console.error("Voting failed:", error);
         } finally {

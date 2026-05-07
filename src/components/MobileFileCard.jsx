@@ -10,7 +10,7 @@ const statusBadgeClass = {
     'UNDER REVIEW': 'badge-review',
 };
 
-export default function MobileFileCard({ file, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
+export default function MobileFileCard({ file, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting, dbId }) {
     const [showReports, setShowReports] = useState(false);
     const isOwner = file.uploadedById === user?.uid;
     const badgeClass = statusBadgeClass[file.status] || 'badge-redacted';
@@ -84,7 +84,7 @@ export default function MobileFileCard({ file, fileNumber, onRedactedClick, user
 
             {/* Bottom: votes + redacted + actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px' }}>
-                <VoteButtons file={file} user={user} />
+                <VoteButtons file={file} user={user} dbId={dbId} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <RedactedBox text={file.redactedText} onRedactedClick={onRedactedClick} />
                 </div>
@@ -123,7 +123,7 @@ export default function MobileFileCard({ file, fileNumber, onRedactedClick, user
                 )}
             </div>
             {showReports && (
-                <IntelReportPanel file={file} user={user} userProfile={userProfile} />
+                <IntelReportPanel file={file} user={user} userProfile={userProfile} dbId={dbId} />
             )}
         </div>
     );

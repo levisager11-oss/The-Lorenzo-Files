@@ -19,7 +19,7 @@ function StatCell({ label, value, color }) {
     );
 }
 
-export default function ProfilePage({ user, userProfile, files, onClose }) {
+export default function ProfilePage({ user, userProfile, files, onClose, membership, database }) {
     const isMobile = useIsMobile();
 
     const myFiles = files.filter(f => f.uploadedById === user.uid);
@@ -27,7 +27,7 @@ export default function ProfilePage({ user, userProfile, files, onClose }) {
     const totalDownvotes = myFiles.reduce((s, f) => s + (f.downvotes || 0), 0);
     const netScore = totalUpvotes - totalDownvotes;
     const totalBytes = myFiles.reduce((s, f) => s + (f.sizeInBytes || 0), 0);
-    const xp = userProfile.experiencePoints ?? 0;
+    const xp = membership?.experiencePoints ?? userProfile.experiencePoints ?? 0;
     const memberDays = userProfile.createdAt
         ? Math.max(1, Math.floor((Date.now() - userProfile.createdAt) / 86400000))
         : 1;
@@ -53,7 +53,9 @@ export default function ProfilePage({ user, userProfile, files, onClose }) {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-ac)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                         </svg>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.28em', color: 'var(--c-ac)', textTransform: 'uppercase' }}>AGENT DOSSIER</span>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.28em', color: 'var(--c-ac)', textTransform: 'uppercase' }}>
+                            AGENT DOSSIER{database?.name ? ` · ${database.name.toUpperCase()}` : ''}
+                        </span>
                     </div>
                     <button onClick={onClose} style={{
                         background: 'transparent', border: '1px solid var(--ac-a28)', color: 'var(--c-tx2)',
