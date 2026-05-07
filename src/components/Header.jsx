@@ -5,7 +5,7 @@ import RadarSeal from './RadarSeal';
 import ThemeToggle from './ThemeToggle';
 import useIsMobile from '../hooks/useIsMobile';
 
-export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard }) {
+export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard, onShowGames }) {
     const [time, setTime] = useState(new Date());
     const isMobile = useIsMobile();
     const clickCount = { current: 0, timer: null };
@@ -124,6 +124,28 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                             </div>
                         )}
                         <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                            {/* Games button */}
+                            <button
+                                onClick={onShowGames}
+                                title="Recreational Protocols"
+                                style={{
+                                    background: 'rgba(255,45,85,0.08)', color: '#ff2d55',
+                                    border: '1px solid rgba(255,45,85,0.25)',
+                                    padding: isMobile ? '5px 8px' : '5px 10px', borderRadius: 2,
+                                    display: 'flex', alignItems: 'center', gap: 4,
+                                    cursor: 'pointer', transition: 'all 150ms',
+                                    fontFamily: 'var(--font-display)', fontWeight: 600,
+                                }}
+                                onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.18)'; e.currentTarget.style.borderColor = '#ff2d55'; }}
+                                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,45,85,0.25)'; }}
+                            >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="6" y1="11" x2="10" y2="11" /><line x1="8" y1="9" x2="8" y2="13" />
+                                    <line x1="15" y1="12" x2="15.01" y2="12" /><line x1="18" y1="10" x2="18.01" y2="10" />
+                                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                                </svg>
+                                {!isMobile && <span style={{ fontSize: 9, letterSpacing: '0.1em' }}>GAMES</span>}
+                            </button>
                             {/* Leaderboard button */}
                             <button
                                 onClick={onShowLeaderboard}

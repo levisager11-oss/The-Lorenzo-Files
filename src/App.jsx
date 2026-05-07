@@ -37,6 +37,7 @@ import MemeEasterEgg from './components/MemeEasterEgg';
 import AdSenseAd from './components/AdSenseAd';
 import ProfilePage from './components/ProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
+import GamesPage from './components/GamesPage';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
@@ -114,7 +115,7 @@ export default function App() {
   const [fileToPurge, setFileToPurge] = useState(null);
 
   // Page navigation
-  const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard'
+  const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard' | 'games'
 
   // Dev Menu State
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
@@ -417,6 +418,7 @@ export default function App() {
             onlineCount={onlineCount}
             onShowProfile={() => setCurrentPage('profile')}
             onShowLeaderboard={() => setCurrentPage('leaderboard')}
+            onShowGames={() => setCurrentPage('games')}
           />
 
         {/* Classification Banner */}
@@ -557,6 +559,9 @@ export default function App() {
       )}
       {currentPage === 'leaderboard' && (
         <LeaderboardPage user={user} files={files} onClose={() => setCurrentPage('main')} />
+      )}
+      {currentPage === 'games' && (
+        <GamesPage user={user} userProfile={userProfile} onClose={() => setCurrentPage('main')} />
       )}
 
       {/* Developer Menu (levi.sager11@gmail.com only) */}
