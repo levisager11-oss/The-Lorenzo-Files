@@ -3,16 +3,15 @@ import { db } from "./firebase";
 
 /**
  * Cast or retract a vote on a comment atomically.
- * @param {string} dbId     - Database/department ID
  * @param {string} fileId   - Firestore document ID
  * @param {string} reportId - Firestore comment ID
  * @param {string} uid      - Firebase Auth user UID
  * @param {"up"} newVote
  * @returns {Promise<"added"|"changed"|"removed">}
  */
-export async function voteOnComment(dbId, fileId, reportId, uid, newVote) {
-    const fileRef  = doc(db, "databases", dbId, "evidenceFiles", fileId, "intelReports", reportId);
-    const voterRef = doc(db, "databases", dbId, "evidenceFiles", fileId, "intelReports", reportId, "voters", uid);
+export async function voteOnComment(fileId, reportId, uid, newVote) {
+    const fileRef  = doc(db, "evidenceFiles", fileId, "intelReports", reportId);
+    const voterRef = doc(db, "evidenceFiles", fileId, "intelReports", reportId, "voters", uid);
 
     return runTransaction(db, async (tx) => {
         const voterSnap = await tx.get(voterRef);

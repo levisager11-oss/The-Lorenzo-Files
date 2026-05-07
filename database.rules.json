@@ -3,6 +3,22 @@
     ".read": false,
     ".write": false,
 
+    "gameRooms": {
+      "$roomCode": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "gameSecrets": {
+      "$roomCode": {
+        "$playerUid": {
+          ".read": "auth != null && auth.uid == $playerUid",
+          ".write": "auth != null"
+        }
+      }
+    },
+
     "departments": {
       "$dbId": {
         "chat": {

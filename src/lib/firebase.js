@@ -22,14 +22,14 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export { onAuthStateChanged };
 
-// RTDB powers the per-department live chat. If the database URL is missing
-// or malformed, fall back to null so the rest of the app still loads.
+// RTDB is only needed for the games feature. Wrap in try/catch so a missing
+// or malformed VITE_FIREBASE_DATABASE_URL never crashes the rest of the app.
 let rtdb = null;
 try {
     if (import.meta.env.VITE_FIREBASE_DATABASE_URL) {
         rtdb = getDatabase(app);
     }
 } catch (e) {
-    console.warn('[Chat] Firebase RTDB unavailable:', e.message);
+    console.warn('[Games] Firebase RTDB unavailable:', e.message);
 }
 export { rtdb };

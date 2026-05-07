@@ -10,7 +10,7 @@ const statusBadgeClass = {
     'UNDER REVIEW': 'badge-review',
 };
 
-export default function FileRow({ file, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting, dbId }) {
+export default function FileRow({ file, fileNumber, onRedactedClick, user, userProfile, onDelete, isDeleting }) {
     const [showReports, setShowReports] = useState(false);
     const isOwner = file.uploadedById === user?.uid;
     const badgeClass = statusBadgeClass[file.status] || 'badge-redacted';
@@ -45,7 +45,7 @@ export default function FileRow({ file, fileNumber, onRedactedClick, user, userP
 
                 {/* Votes */}
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <VoteButtons file={file} user={user} dbId={dbId} />
+                    <VoteButtons file={file} user={user} />
                 </div>
 
                 {/* File name */}
@@ -142,7 +142,7 @@ export default function FileRow({ file, fileNumber, onRedactedClick, user, userP
                 </div>
             </div>
             {showReports && (
-                <IntelReportPanel file={file} user={user} userProfile={userProfile} dbId={dbId} />
+                <IntelReportPanel file={file} user={user} userProfile={userProfile} />
             )}
         </div>
     );

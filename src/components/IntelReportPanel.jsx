@@ -19,23 +19,23 @@ import {
 } from 'firebase/firestore';
 import { voteOnComment } from '../lib/voteOnComment';
 
-function CommentVoteButton({ dbId, fileId, report, user }) {
+function CommentVoteButton({ fileId, report, user }) {
     const [myVote, setMyVote] = useState(null);
     const [isVoting, setIsVoting] = useState(false);
 
     useEffect(() => {
-        if (!user || !fileId || !report.id || !dbId) return;
-        const ref = doc(db, "databases", dbId, "evidenceFiles", fileId, "intelReports", report.id, "voters", user.uid);
+        if (!user || !fileId || !report.id) return;
+        const ref = doc(db, "evidenceFiles", fileId, "intelReports", report.id, "voters", user.uid);
         const unsub = onSnapshot(ref, (snap) => {
             setMyVote(snap.exists() ? snap.data().vote : null);
         });
         return unsub;
-    }, [dbId, fileId, report.id, user]);
+    }, [fileId, report.id, user]);
 
     const handleVote = async (type) => {
-        if (isVoting || !user || !dbId) return;
+        if (isVoting || !user) return;
         setIsVoting(true);
-        try { await voteOnComment(dbId, fileId, report.id, user.uid, type); }
+        try { await voteOnComment(fileId, report.id, user.uid, type); }
         catch (error) { console.error("Voting failed:", error); }
         finally { setIsVoting(false); }
     };
@@ -83,7 +83,7 @@ function formatTimestamp(ts) {
     return `${yyyy}-${MM}-${dd} ${HH}:${mm}`;
 }
 
-export default function IntelReportPanel({ file, user, userProfile, dbId }) {
+export default function IntelReportPanel({ file, user, userProfile }) {
     const [reports, setReports] = useState([]);
     const [text, setText] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -91,14 +91,13 @@ export default function IntelReportPanel({ file, user, userProfile, dbId }) {
     const fileDocId = file.docId || file.id.toString();
 
     useEffect(() => {
-        if (!dbId) return;
-        const reportsRef = collection(db, "databases", dbId, "evidenceFiles", fileDocId, "intelReports");
+        const reportsRef = collection(db, "evidenceFiles", fileDocId, "intelReports");
         const q = query(reportsRef, orderBy("createdAt", "asc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setReports(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
         return () => unsubscribe();
-    }, [dbId, fileDocId]);
+    }, [fileDocId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -110,8 +109,6 @@ export default function IntelReportPanel({ file, user, userProfile, dbId }) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const startOfDay = today.getTime();
-
-        if (!dbId) { setSubmitting(false); return; }
 
         try {
             const reportsGroupRef = collectionGroup(db, 'intelReports');
@@ -135,13 +132,13 @@ export default function IntelReportPanel({ file, user, userProfile, dbId }) {
 
         try {
             const reportId = Date.now().toString();
-            await setDoc(doc(db, "databases", dbId, "evidenceFiles", fileDocId, "intelReports", reportId), {
+            await setDoc(doc(db, "evidenceFiles", fileDocId, "intelReports", reportId), {
                 id: reportId, text: trimmed,
                 authorId: user.uid, authorEmail: user.email || "",
                 authorUsername: userProfile?.username || "",
                 createdAt: Date.now(), upvotes: 0,
             });
-            await updateDoc(doc(db, "databases", dbId, "evidenceFiles", fileDocId), { commentCount: increment(1) });
+            await updateDoc(doc(db, "evidenceFiles", fileDocId), { commentCount: increment(1) });
             setText("");
         } catch (err) {
             console.error("Failed to submit report:", err);
@@ -152,10 +149,9 @@ export default function IntelReportPanel({ file, user, userProfile, dbId }) {
     };
 
     const handleDelete = async (reportId) => {
-        if (!dbId) return;
         try {
-            await deleteDoc(doc(db, "databases", dbId, "evidenceFiles", fileDocId, "intelReports", reportId));
-            await updateDoc(doc(db, "databases", dbId, "evidenceFiles", fileDocId), { commentCount: increment(-1) });
+            await deleteDoc(doc(db, "evidenceFiles", fileDocId, "intelReports", reportId));
+            await updateDoc(doc(db, "evidenceFiles", fileDocId), { commentCount: increment(-1) });
         } catch (err) {
             console.error("Failed to delete report:", err);
             alert("Error deleting intel report.");
@@ -194,7 +190,7 @@ export default function IntelReportPanel({ file, user, userProfile, dbId }) {
                                 }}
                             >
                                 <div style={{ flexShrink: 0 }}>
-                                    <CommentVoteButton dbId={dbId} fileId={fileDocId} report={report} user={user} />
+                                    <CommentVoteButton fileId={fileDocId} report={report} user={user} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>

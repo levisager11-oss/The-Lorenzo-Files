@@ -2,90 +2,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isMember(dbId) {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/databases/$(dbId)/members/$(request.auth.uid));
-    }
-
-    // /users/{uid}: profile + currentDatabaseId.
-    // Read by any signed-in user (used for displaying usernames). Each user
-    // can write only their own profile.
+    // Users collection: anyone authenticated can read, users can update their own
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Presence tracking: users can write their own presence doc, anyone authenticated can read
     match /presence/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId;
-      allow delete: if isSignedIn() && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    // /databases/{dbId}: top-level metadata (name, joinCode, ownerId, etc.).
-    // Any signed-in user can read so they can resolve a join code.
-    // Any signed-in user can create a new database (becoming its owner).
-    // Updates: owner can rename / change settings; member-count changes are
-    // permitted on join/leave.
-    match /databases/{dbId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn()
-        && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn()
-        && (
-          // Owner can update fields on their own database.
-          resource.data.ownerId == request.auth.uid
-          // Any member can adjust memberCount (used during join/leave).
-          || (isMember(dbId)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount']))
-        );
-      allow delete: if isSignedIn()
-        && resource.data.ownerId == request.auth.uid;
+    // Evidence files: anyone authenticated can read
+    match /evidenceFiles/{fileId} {
+      allow read: if request.auth != null;
+      // Only allow writes via client SDK for upload (no direct vote writes)
+      allow create: if request.auth != null;
+      // Disallow direct upvotes/downvotes field updates from client
+      allow update: if request.auth != null
+        && !("upvotes"  in request.resource.data.diff(resource.data).affectedKeys())
+        && !("downvotes" in request.resource.data.diff(resource.data).affectedKeys());
+      allow delete: if request.auth != null 
+        && resource.data.uploadedById == request.auth.uid;
 
-      // /databases/{dbId}/members/{uid}: a user's membership doc.
-      match /members/{uid} {
-        allow read: if isMember(dbId) || request.auth.uid == uid;
-        // Joining: user creates own membership
-        allow create: if isSignedIn() && request.auth.uid == uid;
-        // Updates: only own doc; XP delta of +50 (uploads) or any field except XP.
-        allow update: if isSignedIn() && request.auth.uid == uid;
-        allow delete: if isSignedIn() && request.auth.uid == uid;
+      // Voters sub-collection: each user owns only their own voter doc
+      match /voters/{uid} {
+        allow read:   if request.auth != null;
+        allow write:  if request.auth != null && request.auth.uid == uid;
+        allow delete: if request.auth != null && request.auth.uid == uid;
       }
 
-      // /databases/{dbId}/evidenceFiles/{fileId}: archived evidence, scoped per-db.
-      match /evidenceFiles/{fileId} {
-        allow read: if isMember(dbId);
-        allow create: if isMember(dbId);
-        // Disallow direct upvotes/downvotes field updates from client (must go through transaction in voteOnFile, which writes to voters/ and updates the file doc).
-        allow update: if isMember(dbId);
-        allow delete: if isMember(dbId)
-          && resource.data.uploadedById == request.auth.uid;
+      match /intelReports/{reportId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.resource.data.authorId == request.auth.uid;
+        allow update: if request.auth != null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']);
+        allow delete: if request.auth != null
+          && resource.data.authorId == request.auth.uid;
 
-        // Voters sub-collection: each user owns only their own voter doc
-        match /voters/{voterUid} {
-          allow read:   if isMember(dbId);
-          allow write:  if isMember(dbId) && request.auth.uid == voterUid;
-          allow delete: if isMember(dbId) && request.auth.uid == voterUid;
-        }
-
-        match /intelReports/{reportId} {
-          allow read: if isMember(dbId);
-          allow create: if isMember(dbId)
-            && request.resource.data.authorId == request.auth.uid;
-          allow update: if isMember(dbId)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']);
-          allow delete: if isMember(dbId)
-            && resource.data.authorId == request.auth.uid;
-
-          match /voters/{voterUid} {
-            allow read:   if isMember(dbId);
-            allow write:  if isMember(dbId) && request.auth.uid == voterUid;
-            allow delete: if isMember(dbId) && request.auth.uid == voterUid;
-          }
+        match /voters/{uid} {
+          allow read:   if request.auth != null;
+          allow write:  if request.auth != null && request.auth.uid == uid;
+          allow delete: if request.auth != null && request.auth.uid == uid;
         }
       }
     }

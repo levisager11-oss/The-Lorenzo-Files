@@ -34,16 +34,15 @@ import LoginScreen from './components/LoginScreen';
 import EmailVerificationGate from './components/EmailVerificationGate';
 import DevMenu from './components/DevMenu';
 import MemeEasterEgg from './components/MemeEasterEgg';
-import AdSenseAd from './components/AdSenseAd';
 import ProfilePage from './components/ProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
+import GamesPage from './components/GamesPage';
 import ChatPanel from './components/ChatPanel';
-import DatabasePicker from './components/DatabasePicker';
 import useUnreadChatCount from './hooks/useUnreadChatCount';
-import useCurrentDatabase from './hooks/useCurrentDatabase';
-import { leaveCurrentDatabase } from './lib/databases';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+
+const GLOBAL_CHAT_ROOM = 'global';
 
 function LoadingScreen({ message }) {
   return (
@@ -114,23 +113,20 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [fileToUpload, setFileToUpload] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  
+
   // Purge State
   const [fileToPurge, setFileToPurge] = useState(null);
 
   // Page navigation
-  const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard'
+  const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard' | 'games'
   const [chatOpen, setChatOpen] = useState(false);
-  const chatUnreadCount = useUnreadChatCount(currentDbId, chatOpen);
+  const chatUnreadCount = useUnreadChatCount(GLOBAL_CHAT_ROOM, chatOpen);
 
   // Dev Menu State
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
 
   const isMobile = useIsMobile();
   const onlineCount = useOnlineCount(user?.uid);
-
-  const currentDbId = userProfile?.currentDatabaseId || null;
-  const { database: currentDatabase, membership: currentMembership, loading: dbLoading } = useCurrentDatabase(user, currentDbId);
 
   // Auth Listener
   useEffect(() => {
@@ -164,13 +160,10 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !currentDbId) {
-      setFiles([]);
-      return;
-    }
+    if (!user) return; // Don't fetch files if not authenticated
 
-    // Listen to Firebase evidenceFiles collection scoped to the current database
-    const filesCollection = collection(db, "databases", currentDbId, "evidenceFiles");
+    // Listen to Firebase evidenceFiles collection
+    const filesCollection = collection(db, "evidenceFiles");
     const q = query(filesCollection, orderBy("id", "desc"));
 
     // MOCK FOR PLAYWRIGHT
@@ -182,7 +175,6 @@ export default function App() {
       return () => {};
     }
 
-    setLoading(true);
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       if (snapshot.empty) {
         setFiles([]);
@@ -207,17 +199,17 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [user, currentDbId]);
+  }, [user]);
 
   const filteredFiles = useMemo(() => {
     let result = [...files];
-    
+
     // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((f) => f.name.toLowerCase().includes(q));
     }
-    
+
     // Filter by selected suspect
     if (selectedSuspect) {
       result = result.filter((f) => {
@@ -252,7 +244,7 @@ export default function App() {
       // date-desc (default)
       result.sort((a, b) => b.id - a.id);
     }
-    
+
     return result;
   }, [searchQuery, selectedSuspect, files, sortBy]);
 
@@ -307,7 +299,7 @@ export default function App() {
   };
 
   const processFileUpload = async (contextText, suspectNames) => {
-    if (!fileToUpload || !user || !currentDbId) return;
+    if (!fileToUpload || !user) return;
 
     setShowUploadModal(false);
     setUploading(true);
@@ -350,9 +342,9 @@ export default function App() {
         downvotes: 0
       };
 
-      await setDoc(doc(db, "databases", currentDbId, "evidenceFiles", newEvidence.id.toString()), newEvidence);
+      await setDoc(doc(db, "evidenceFiles", newEvidence.id.toString()), newEvidence);
 
-      await updateDoc(doc(db, "databases", currentDbId, "members", user.uid), {
+      await updateDoc(doc(db, "users", user.uid), {
         experiencePoints: increment(50)
       });
     } catch (error) {
@@ -371,7 +363,7 @@ export default function App() {
   const confirmPurge = async () => {
     const file = fileToPurge;
     setFileToPurge(null);
-    if (!file || !currentDbId) return;
+    if (!file) return;
 
     const docId = file.docId || file.id.toString();
     setDeletingId(docId);
@@ -384,7 +376,7 @@ export default function App() {
       }
 
       // 2. Delete from Firestore
-      await deleteDoc(doc(db, "databases", currentDbId, "evidenceFiles", docId));
+      await deleteDoc(doc(db, "evidenceFiles", docId));
     } catch (error) {
       console.error("Error deleting file:", error);
       alert("CRITICAL ERROR: Failed to purge record from archive.");
@@ -413,30 +405,9 @@ export default function App() {
     return <UsernamePrompt user={user} onComplete={setUserProfile} />;
   }
 
-  if (!currentDbId) {
-    return <DatabasePicker user={user} userProfile={userProfile} />;
-  }
-
-  if (dbLoading) {
-    return <LoadingScreen message="ESTABLISHING SECURE CHANNEL" />;
-  }
-
-  if (!currentDatabase) {
-    // Stale ref to a database that no longer exists — drop the user back to the picker.
-    return <DatabasePicker user={user} userProfile={userProfile} />;
-  }
-
   if (loading) {
     return <LoadingScreen message="ACCESSING CLOUD EVIDENCE ARCHIVE" />;
   }
-
-  const handleSwitchDatabase = async () => {
-    try {
-      await leaveCurrentDatabase({ user, dbId: currentDbId });
-    } catch (e) {
-      console.error('Failed to leave database:', e);
-    }
-  };
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent' }}>
@@ -446,17 +417,15 @@ export default function App() {
       <div className="relative z-10">
         <Header
             username={userProfile?.username}
-            experiencePoints={currentMembership?.experiencePoints}
+            experiencePoints={userProfile?.experiencePoints}
             lightMode={lightMode}
             onToggleLightMode={toggleLightMode}
             onlineCount={onlineCount}
             onShowProfile={() => setCurrentPage('profile')}
             onShowLeaderboard={() => setCurrentPage('leaderboard')}
+            onShowGames={() => setCurrentPage('games')}
             onShowChat={() => setChatOpen(true)}
             chatUnreadCount={chatUnreadCount}
-            databaseName={currentDatabase?.name}
-            joinCode={currentDatabase?.joinCode}
-            onSwitchDatabase={handleSwitchDatabase}
           />
 
         {/* Classification Banner */}
@@ -541,20 +510,13 @@ export default function App() {
               </div>
             )}
 
-            {filteredFiles.length > 0 ? filteredFiles.flatMap((file, index) => {
-              const row = isMobile ? (
-                <MobileFileCard key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} dbId={currentDbId} />
+            {filteredFiles.length > 0 ? filteredFiles.map((file, index) => (
+              isMobile ? (
+                <MobileFileCard key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} />
               ) : (
-                <FileRow key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} dbId={currentDbId} />
-              );
-              const showAd = (index + 1) % 5 === 0 && index + 1 < filteredFiles.length;
-              return showAd ? [
-                row,
-                <div key={`ad-${index}`} style={{ padding: '8px 12px', background: 'rgba(0,212,255,0.02)', borderTop: '1px solid rgba(0,212,255,0.06)', borderBottom: '1px solid rgba(0,212,255,0.06)' }}>
-                  <AdSenseAd adSlot="3814703645" adFormat="auto" style={{ minHeight: 90 }} />
-                </div>
-              ] : [row];
-            }) : (
+                <FileRow key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} />
+              )
+            )) : (
               <div style={{ padding: '64px 24px', textAlign: 'center' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, letterSpacing: '0.28em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 8 }}>NO MATCHING FILES FOUND</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--c-tx3)', opacity: 0.5 }}>ADJUST SEARCH PARAMETERS</div>
@@ -564,9 +526,6 @@ export default function App() {
 
           {/* Footer */}
           <footer style={{ marginTop: 32, paddingBottom: 28, textAlign: 'center' }}>
-            <div style={{ marginBottom: 20 }}>
-              <AdSenseAd adSlot="3814703645" adFormat="auto" style={{ minHeight: 90 }} />
-            </div>
             <div className="animated-border" style={{ marginBottom: 20 }} />
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 9, letterSpacing: '0.3em', color: 'var(--c-tx3)', textTransform: 'uppercase', marginBottom: 5 }}>
               DEPARTMENT OF LORENZO — INTELLIGENCE MANAGEMENT SYSTEM v4.2.0 // DELOS NETWORK
@@ -593,19 +552,20 @@ export default function App() {
       <MemeEasterEgg />
 
       {currentPage === 'profile' && (
-        <ProfilePage user={user} userProfile={userProfile} files={files} membership={currentMembership} database={currentDatabase} onClose={() => setCurrentPage('main')} />
+        <ProfilePage user={user} userProfile={userProfile} files={files} onClose={() => setCurrentPage('main')} />
       )}
       {currentPage === 'leaderboard' && (
-        <LeaderboardPage user={user} files={files} dbId={currentDbId} database={currentDatabase} onClose={() => setCurrentPage('main')} />
+        <LeaderboardPage user={user} files={files} onClose={() => setCurrentPage('main')} />
+      )}
+      {currentPage === 'games' && (
+        <GamesPage user={user} userProfile={userProfile} onClose={() => setCurrentPage('main')} />
       )}
 
       {chatOpen && (
         <ChatPanel
-          key={currentDbId}
           user={user}
           userProfile={userProfile}
-          dbId={currentDbId}
-          databaseName={currentDatabase?.name}
+          dbId={GLOBAL_CHAT_ROOM}
           onClose={() => setChatOpen(false)}
         />
       )}
@@ -619,7 +579,6 @@ export default function App() {
         onTriggerBreach={() => setBreached(true)}
         devBypassUploadLimit={devBypassUploadLimit}
         onSetDevBypassUploadLimit={setDevBypassUploadLimit}
-        dbId={currentDbId}
       />
 
       {/* Purge Confirmation Modal */}

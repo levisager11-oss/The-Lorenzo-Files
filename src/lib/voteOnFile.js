@@ -3,15 +3,14 @@ import { db } from "./firebase";
 
 /**
  * Cast or retract a vote atomically.
- * @param {string} dbId     - Database/department ID
  * @param {string} fileId   - Firestore document ID
  * @param {string} uid      - Firebase Auth user UID
  * @param {"up"|"down"} newVote
  * @returns {Promise<"added"|"changed"|"removed">}
  */
-export async function voteOnFile(dbId, fileId, uid, newVote) {
-    const fileRef  = doc(db, "databases", dbId, "evidenceFiles", fileId);
-    const voterRef = doc(db, "databases", dbId, "evidenceFiles", fileId, "voters", uid);
+export async function voteOnFile(fileId, uid, newVote) {
+    const fileRef  = doc(db, "evidenceFiles", fileId);
+    const voterRef = doc(db, "evidenceFiles", fileId, "voters", uid);
 
     return runTransaction(db, async (tx) => {
         const voterSnap = await tx.get(voterRef);
@@ -25,7 +24,7 @@ export async function voteOnFile(dbId, fileId, uid, newVote) {
         if (existing === newVote) {
             tx.delete(voterRef);
             tx.update(fileRef, {
-                [newVote === "up" ? "upvotes" : "downvotes"]:
+                [newVote === "up" ? "upvotes" : "downvotes"]: 
                     Math.max(0, (fileSnap.data()[newVote === "up" ? "upvotes" : "downvotes"] || 0) - 1)
             });
             return "removed";
@@ -46,7 +45,7 @@ export async function voteOnFile(dbId, fileId, uid, newVote) {
         // --- Fresh vote ---
         tx.set(voterRef, { vote: newVote, timestamp: serverTimestamp() });
         tx.update(fileRef, {
-            [newVote === "up" ? "upvotes" : "downvotes"]:
+            [newVote === "up" ? "upvotes" : "downvotes"]: 
                 (fileSnap.data()[newVote === "up" ? "upvotes" : "downvotes"] || 0) + 1
         });
         return "added";

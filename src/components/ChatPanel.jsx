@@ -34,7 +34,7 @@ function TypingDots() {
     );
 }
 
-export default function ChatPanel({ user, userProfile, dbId, databaseName, onClose }) {
+export default function ChatPanel({ user, userProfile, dbId, onClose }) {
     const isMobile = useIsMobile();
     const { messages, ready, sendMessage, deleteMessage, typingUsers, setTyping } = useChat(dbId, user, userProfile);
     const [text, setText] = useState('');
@@ -129,7 +129,7 @@ export default function ChatPanel({ user, userProfile, dbId, databaseName, onClo
                                 fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.22em',
                                 color: 'var(--c-ac)', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                             }}>
-                                COMMS{databaseName ? ` · ${databaseName.toUpperCase()}` : ''}
+                                COMMS · ALL AGENTS
                             </span>
                         </div>
                         <button onClick={onClose} style={{
