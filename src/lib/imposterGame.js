@@ -1,15 +1,13 @@
 import {
-    doc,
-    setDoc,
-    getDoc,
-    updateDoc,
-    collection,
-    getDocs,
-    writeBatch,
+    ref as dbRef,
+    get,
+    set,
+    update,
+    remove,
     serverTimestamp,
-    deleteField,
-} from 'firebase/firestore';
-import { db } from './firebase';
+    onDisconnect,
+} from 'firebase/database';
+import { rtdb } from './firebase';
 import { pickWordPair } from '../data/games/imposterWords';
 
 const ROOM_CODE_LEN = 4;
@@ -24,12 +22,6 @@ function randomCode() {
     return out;
 }
 
-export const DEFAULT_SETTINGS = {
-    category: 'random',
-    imposterMode: 'blank',
-    clueRounds: 1,
-};
-
 function shuffle(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i -= 1) {
@@ -39,15 +31,26 @@ function shuffle(arr) {
     return a;
 }
 
+export const DEFAULT_SETTINGS = {
+    category: 'random',
+    imposterMode: 'blank',
+    clueRounds: 1,
+};
+
+function attachPresence(code, uid) {
+    const playerRef = dbRef(rtdb, `gameRooms/${code}/players/${uid}`);
+    onDisconnect(playerRef).remove();
+}
+
 export async function createRoom({ uid, username }) {
     if (!uid) throw new Error('Not signed in');
     for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt += 1) {
         const code = randomCode();
-        const ref = doc(db, 'gameRooms', code);
-        const snap = await getDoc(ref);
+        const roomRef = dbRef(rtdb, `gameRooms/${code}`);
+        const snap = await get(roomRef);
         if (snap.exists()) continue;
         const playerName = username || 'AGENT';
-        await setDoc(ref, {
+        await set(roomRef, {
             code,
             hostUid: uid,
             hostUsername: playerName,
@@ -56,17 +59,15 @@ export async function createRoom({ uid, username }) {
             players: {
                 [uid]: {
                     username: playerName,
-                    joinedAt: Date.now(),
-                    lastSeen: Date.now(),
+                    joinedAt: serverTimestamp(),
+                    lastSeen: serverTimestamp(),
                     hasVoted: false,
                 },
             },
-            round: null,
-            publicWord: null,
-            votes: {},
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         });
+        attachPresence(code, uid);
         return code;
     }
     throw new Error('Could not allocate room code, try again');
@@ -75,53 +76,52 @@ export async function createRoom({ uid, username }) {
 export async function joinRoom({ code, uid, username }) {
     if (!uid) throw new Error('Not signed in');
     if (!code) throw new Error('Room code required');
-    const ref = doc(db, 'gameRooms', code);
-    const snap = await getDoc(ref);
+    const roomRef = dbRef(rtdb, `gameRooms/${code}`);
+    const snap = await get(roomRef);
     if (!snap.exists()) throw new Error('Room not found');
-    const data = snap.data();
-    if (data.status !== 'lobby' && !data.players?.[uid]) {
+    const data = snap.val();
+    const existing = data.players?.[uid];
+    if (data.status !== 'lobby' && !existing) {
         throw new Error('Round in progress, ask the host to reset');
     }
-    await updateDoc(ref, {
-        [`players.${uid}`]: {
-            username: username || 'AGENT',
-            joinedAt: data.players?.[uid]?.joinedAt || Date.now(),
-            lastSeen: Date.now(),
-            hasVoted: false,
-        },
-        updatedAt: serverTimestamp(),
+    const playerName = username || 'AGENT';
+    await set(dbRef(rtdb, `gameRooms/${code}/players/${uid}`), {
+        username: playerName,
+        joinedAt: existing?.joinedAt || serverTimestamp(),
+        lastSeen: serverTimestamp(),
+        hasVoted: false,
     });
+    await set(dbRef(rtdb, `gameRooms/${code}/updatedAt`), serverTimestamp());
+    attachPresence(code, uid);
 }
 
 export async function leaveRoom({ code, uid }) {
     if (!uid || !code) return;
-    const ref = doc(db, 'gameRooms', code);
-    const snap = await getDoc(ref);
+    const roomRef = dbRef(rtdb, `gameRooms/${code}`);
+    const snap = await get(roomRef);
     if (!snap.exists()) return;
-    const data = snap.data();
+    const data = snap.val();
     if (data.hostUid === uid) {
         await deleteRoom(code);
         return;
     }
-    await updateDoc(ref, {
-        [`players.${uid}`]: deleteField(),
-        [`votes.${uid}`]: deleteField(),
+    await update(dbRef(rtdb, `gameRooms/${code}`), {
+        [`players/${uid}`]: null,
+        [`votes/${uid}`]: null,
         updatedAt: serverTimestamp(),
     });
 }
 
 export async function deleteRoom(code) {
     if (!code) return;
-    const secretsCol = collection(db, 'gameRooms', code, 'secrets');
-    const secretSnap = await getDocs(secretsCol);
-    const batch = writeBatch(db);
-    secretSnap.docs.forEach(d => batch.delete(d.ref));
-    batch.delete(doc(db, 'gameRooms', code));
-    await batch.commit();
+    await Promise.all([
+        remove(dbRef(rtdb, `gameRooms/${code}`)),
+        remove(dbRef(rtdb, `gameSecrets/${code}`)),
+    ]);
 }
 
 export async function updateSettings({ code, settings }) {
-    await updateDoc(doc(db, 'gameRooms', code), {
+    await update(dbRef(rtdb, `gameRooms/${code}`), {
         settings,
         updatedAt: serverTimestamp(),
     });
@@ -130,9 +130,7 @@ export async function updateSettings({ code, settings }) {
 export async function heartbeat({ code, uid }) {
     if (!code || !uid) return;
     try {
-        await updateDoc(doc(db, 'gameRooms', code), {
-            [`players.${uid}.lastSeen`]: Date.now(),
-        });
+        await set(dbRef(rtdb, `gameRooms/${code}/players/${uid}/lastSeen`), serverTimestamp());
     } catch {
         // ignore — room may have been deleted
     }
@@ -145,54 +143,47 @@ export async function startRound({ code, room }) {
     const categoryId = settings.category === 'random' ? null : settings.category;
     const { word, decoyWord, categoryLabel } = pickWordPair(categoryId, settings.imposterMode);
     const imposterUid = playerUids[Math.floor(Math.random() * playerUids.length)];
-
-    const batch = writeBatch(db);
-
-    // Wipe stale secrets from any previous round
-    const stale = await getDocs(collection(db, 'gameRooms', code, 'secrets'));
-    stale.docs.forEach(d => batch.delete(d.ref));
-
-    playerUids.forEach(uid => {
-        const isImposter = uid === imposterUid;
-        batch.set(doc(db, 'gameRooms', code, 'secrets', uid), {
-            word: isImposter ? decoyWord : word,
-            isImposter,
-            createdAt: Date.now(),
-        });
-    });
-
-    const playerUpdates = {};
-    playerUids.forEach(uid => {
-        playerUpdates[`players.${uid}.hasVoted`] = false;
-    });
-
     const clueOrder = shuffle(playerUids);
     const rounds = Math.max(1, settings.clueRounds || 1);
 
-    batch.update(doc(db, 'gameRooms', code), {
-        ...playerUpdates,
-        status: 'reveal',
-        round: {
-            imposterUid,
-            word,
-            startedAt: Date.now(),
-            categoryLabel,
-            clueOrder,
-            totalRounds: rounds,
-            currentTurnIdx: 0,
-            clues: [], // append-only log of { uid, word, round, submittedAt }
-        },
-        publicWord: null,
-        votes: {},
-        updatedAt: serverTimestamp(),
+    const updates = {};
+
+    // Wipe any previous secrets for this room and write fresh per-player ones
+    updates[`gameSecrets/${code}`] = null;
+    playerUids.forEach((puid) => {
+        const isImposter = puid === imposterUid;
+        updates[`gameSecrets/${code}/${puid}`] = {
+            word: isImposter ? decoyWord : word,
+            isImposter,
+            createdAt: serverTimestamp(),
+        };
     });
 
-    await batch.commit();
+    playerUids.forEach((puid) => {
+        updates[`gameRooms/${code}/players/${puid}/hasVoted`] = false;
+    });
+
+    updates[`gameRooms/${code}/status`] = 'reveal';
+    updates[`gameRooms/${code}/round`] = {
+        imposterUid,
+        word,
+        startedAt: serverTimestamp(),
+        categoryLabel,
+        clueOrder,
+        totalRounds: rounds,
+        currentTurnIdx: 0,
+    };
+    updates[`gameRooms/${code}/publicWord`] = null;
+    updates[`gameRooms/${code}/votes`] = null;
+    updates[`gameRooms/${code}/updatedAt`] = serverTimestamp();
+
+    await update(dbRef(rtdb), updates);
+
     return { imposterUid, word };
 }
 
 export async function advanceToClues({ code }) {
-    await updateDoc(doc(db, 'gameRooms', code), {
+    await update(dbRef(rtdb, `gameRooms/${code}`), {
         status: 'clues',
         updatedAt: serverTimestamp(),
     });
@@ -209,40 +200,45 @@ export async function submitClue({ code, room, uid, word }) {
     const totalRounds = Math.max(1, round.totalRounds || 1);
     const totalClues = order.length * totalRounds;
     const roundNum = Math.floor(idx / order.length) + 1;
-    const newClues = [...(round.clues || []), {
-        uid,
-        word: trimmed,
-        round: roundNum,
-        submittedAt: Date.now(),
-    }];
     const nextIdx = idx + 1;
     const advance = nextIdx >= totalClues;
-    await updateDoc(doc(db, 'gameRooms', code), {
-        'round.clues': newClues,
-        'round.currentTurnIdx': nextIdx,
-        ...(advance ? { status: 'voting', votes: {} } : {}),
-        updatedAt: serverTimestamp(),
-    });
+
+    const updates = {
+        [`gameRooms/${code}/round/clues/${idx}`]: {
+            uid,
+            word: trimmed,
+            round: roundNum,
+            submittedAt: serverTimestamp(),
+        },
+        [`gameRooms/${code}/round/currentTurnIdx`]: nextIdx,
+        [`gameRooms/${code}/updatedAt`]: serverTimestamp(),
+    };
+    if (advance) {
+        updates[`gameRooms/${code}/status`] = 'voting';
+        updates[`gameRooms/${code}/votes`] = null;
+    }
+
+    await update(dbRef(rtdb), updates);
 }
 
 export async function advanceToVoting({ code }) {
-    await updateDoc(doc(db, 'gameRooms', code), {
+    await update(dbRef(rtdb, `gameRooms/${code}`), {
         status: 'voting',
-        votes: {},
+        votes: null,
         updatedAt: serverTimestamp(),
     });
 }
 
 export async function castVote({ code, voterUid, votedUid }) {
-    await updateDoc(doc(db, 'gameRooms', code), {
-        [`votes.${voterUid}`]: votedUid,
-        [`players.${voterUid}.hasVoted`]: true,
+    await update(dbRef(rtdb, `gameRooms/${code}`), {
+        [`votes/${voterUid}`]: votedUid,
+        [`players/${voterUid}/hasVoted`]: true,
         updatedAt: serverTimestamp(),
     });
 }
 
 export async function revealResults({ code, room }) {
-    await updateDoc(doc(db, 'gameRooms', code), {
+    await update(dbRef(rtdb, `gameRooms/${code}`), {
         status: 'results',
         publicWord: room?.round?.word ?? null,
         updatedAt: serverTimestamp(),
@@ -250,23 +246,19 @@ export async function revealResults({ code, room }) {
 }
 
 export async function resetToLobby({ code }) {
-    const secretsCol = collection(db, 'gameRooms', code, 'secrets');
-    const secretSnap = await getDocs(secretsCol);
-    const batch = writeBatch(db);
-    secretSnap.docs.forEach(d => batch.delete(d.ref));
-    batch.update(doc(db, 'gameRooms', code), {
+    await remove(dbRef(rtdb, `gameSecrets/${code}`));
+    await update(dbRef(rtdb, `gameRooms/${code}`), {
         status: 'lobby',
         round: null,
         publicWord: null,
-        votes: {},
+        votes: null,
         updatedAt: serverTimestamp(),
     });
-    await batch.commit();
 }
 
 export function tallyVotes(votes) {
     const counts = {};
-    Object.values(votes || {}).forEach(uid => {
+    Object.values(votes || {}).forEach((uid) => {
         if (!uid) return;
         counts[uid] = (counts[uid] || 0) + 1;
     });
