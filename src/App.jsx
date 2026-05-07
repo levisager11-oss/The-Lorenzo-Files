@@ -39,6 +39,7 @@ import ProfilePage from './components/ProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import ChatPanel from './components/ChatPanel';
 import DatabasePicker from './components/DatabasePicker';
+import useUnreadChatCount from './hooks/useUnreadChatCount';
 import useCurrentDatabase from './hooks/useCurrentDatabase';
 import { leaveCurrentDatabase } from './lib/databases';
 import { Analytics } from '@vercel/analytics/react';
@@ -120,6 +121,7 @@ export default function App() {
   // Page navigation
   const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard'
   const [chatOpen, setChatOpen] = useState(false);
+  const chatUnreadCount = useUnreadChatCount(currentDbId, chatOpen);
 
   // Dev Menu State
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
@@ -451,6 +453,7 @@ export default function App() {
             onShowProfile={() => setCurrentPage('profile')}
             onShowLeaderboard={() => setCurrentPage('leaderboard')}
             onShowChat={() => setChatOpen(true)}
+            chatUnreadCount={chatUnreadCount}
             databaseName={currentDatabase?.name}
             joinCode={currentDatabase?.joinCode}
             onSwitchDatabase={handleSwitchDatabase}

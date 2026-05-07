@@ -27,6 +27,23 @@
             },
             "$other": { ".validate": false }
           }
+        },
+
+        "typing": {
+          ".read": "auth != null",
+
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid",
+            ".validate": "newData.hasChildren(['username', 'ts']) || !newData.exists()",
+
+            "username": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "ts": {
+              ".validate": "newData.val() === now"
+            },
+            "$other": { ".validate": false }
+          }
         }
       }
     }

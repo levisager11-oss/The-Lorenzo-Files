@@ -5,7 +5,7 @@ import RadarSeal from './RadarSeal';
 import ThemeToggle from './ThemeToggle';
 import useIsMobile from '../hooks/useIsMobile';
 
-export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard, onShowChat, databaseName, joinCode, onSwitchDatabase }) {
+export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard, onShowChat, chatUnreadCount, databaseName, joinCode, onSwitchDatabase }) {
     const [time, setTime] = useState(new Date());
     const isMobile = useIsMobile();
     const clickCount = { current: 0, timer: null };
@@ -134,6 +134,7 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                                     onClick={onShowChat}
                                     title="Open department chat"
                                     style={{
+                                        position: 'relative',
                                         background: 'rgba(0,255,136,0.08)', color: '#00ff88',
                                         border: '1px solid rgba(0,255,136,0.25)',
                                         padding: isMobile ? '5px 8px' : '5px 10px', borderRadius: 2,
@@ -148,6 +149,19 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                     </svg>
                                     {!isMobile && <span style={{ fontSize: 9, letterSpacing: '0.1em' }}>COMMS</span>}
+                                    {chatUnreadCount > 0 && (
+                                        <span style={{
+                                            position: 'absolute', top: -5, right: -5,
+                                            minWidth: 14, height: 14, borderRadius: 7,
+                                            background: '#ff2d55', color: '#fff',
+                                            fontSize: 8, fontWeight: 700, letterSpacing: 0,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            padding: '0 3px', boxShadow: '0 0 6px rgba(255,45,85,0.7)',
+                                            pointerEvents: 'none',
+                                        }}>
+                                            {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+                                        </span>
+                                    )}
                                 </button>
                             )}
                             {/* Switch department */}
