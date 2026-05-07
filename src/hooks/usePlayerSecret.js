@@ -9,7 +9,7 @@ export default function usePlayerSecret(code, uid) {
     });
 
     useEffect(() => {
-        if (!code || !uid) return undefined;
+        if (!code || !uid || !rtdb) return undefined;
         const secretRef = dbRef(rtdb, `gameSecrets/${code}/${uid}`);
         const unsub = onValue(
             secretRef,

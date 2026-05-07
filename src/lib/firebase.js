@@ -17,8 +17,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-export const rtdb = getDatabase(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export { onAuthStateChanged };
+
+// RTDB is only needed for the games feature; guard against missing env var
+// so the rest of the app still loads during local dev before RTDB is enabled.
+export const rtdb = import.meta.env.VITE_FIREBASE_DATABASE_URL
+    ? getDatabase(app)
+    : null;

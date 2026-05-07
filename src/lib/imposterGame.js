@@ -31,6 +31,11 @@ function shuffle(arr) {
     return a;
 }
 
+function requireRtdb() {
+    if (!rtdb) throw new Error('Firebase Realtime Database is not configured. Add VITE_FIREBASE_DATABASE_URL to your .env.local file.');
+    return rtdb;
+}
+
 export const DEFAULT_SETTINGS = {
     category: 'random',
     imposterMode: 'blank',
@@ -38,7 +43,8 @@ export const DEFAULT_SETTINGS = {
 };
 
 function attachPresence(code, uid) {
-    const playerRef = dbRef(rtdb, `gameRooms/${code}/players/${uid}`);
+    const db = requireRtdb();
+    const playerRef = dbRef(db, `gameRooms/${code}/players/${uid}`);
     onDisconnect(playerRef).remove();
 }
 
@@ -46,7 +52,7 @@ export async function createRoom({ uid, username }) {
     if (!uid) throw new Error('Not signed in');
     for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt += 1) {
         const code = randomCode();
-        const roomRef = dbRef(rtdb, `gameRooms/${code}`);
+        const roomRef = dbRef(requireRtdb(), `gameRooms/${code}`);
         const snap = await get(roomRef);
         if (snap.exists()) continue;
         const playerName = username || 'AGENT';
@@ -76,7 +82,7 @@ export async function createRoom({ uid, username }) {
 export async function joinRoom({ code, uid, username }) {
     if (!uid) throw new Error('Not signed in');
     if (!code) throw new Error('Room code required');
-    const roomRef = dbRef(rtdb, `gameRooms/${code}`);
+    const roomRef = dbRef(requireRtdb(), `gameRooms/${code}`);
     const snap = await get(roomRef);
     if (!snap.exists()) throw new Error('Room not found');
     const data = snap.val();
@@ -85,19 +91,19 @@ export async function joinRoom({ code, uid, username }) {
         throw new Error('Round in progress, ask the host to reset');
     }
     const playerName = username || 'AGENT';
-    await set(dbRef(rtdb, `gameRooms/${code}/players/${uid}`), {
+    await set(dbRef(requireRtdb(), `gameRooms/${code}/players/${uid}`), {
         username: playerName,
         joinedAt: existing?.joinedAt || serverTimestamp(),
         lastSeen: serverTimestamp(),
         hasVoted: false,
     });
-    await set(dbRef(rtdb, `gameRooms/${code}/updatedAt`), serverTimestamp());
+    await set(dbRef(requireRtdb(), `gameRooms/${code}/updatedAt`), serverTimestamp());
     attachPresence(code, uid);
 }
 
 export async function leaveRoom({ code, uid }) {
     if (!uid || !code) return;
-    const roomRef = dbRef(rtdb, `gameRooms/${code}`);
+    const roomRef = dbRef(requireRtdb(), `gameRooms/${code}`);
     const snap = await get(roomRef);
     if (!snap.exists()) return;
     const data = snap.val();
@@ -105,7 +111,7 @@ export async function leaveRoom({ code, uid }) {
         await deleteRoom(code);
         return;
     }
-    await update(dbRef(rtdb, `gameRooms/${code}`), {
+    await update(dbRef(requireRtdb(), `gameRooms/${code}`), {
         [`players/${uid}`]: null,
         [`votes/${uid}`]: null,
         updatedAt: serverTimestamp(),
@@ -115,13 +121,13 @@ export async function leaveRoom({ code, uid }) {
 export async function deleteRoom(code) {
     if (!code) return;
     await Promise.all([
-        remove(dbRef(rtdb, `gameRooms/${code}`)),
-        remove(dbRef(rtdb, `gameSecrets/${code}`)),
+        remove(dbRef(requireRtdb(), `gameRooms/${code}`)),
+        remove(dbRef(requireRtdb(), `gameSecrets/${code}`)),
     ]);
 }
 
 export async function updateSettings({ code, settings }) {
-    await update(dbRef(rtdb, `gameRooms/${code}`), {
+    await update(dbRef(requireRtdb(), `gameRooms/${code}`), {
         settings,
         updatedAt: serverTimestamp(),
     });
@@ -130,7 +136,7 @@ export async function updateSettings({ code, settings }) {
 export async function heartbeat({ code, uid }) {
     if (!code || !uid) return;
     try {
-        await set(dbRef(rtdb, `gameRooms/${code}/players/${uid}/lastSeen`), serverTimestamp());
+        await set(dbRef(requireRtdb(), `gameRooms/${code}/players/${uid}/lastSeen`), serverTimestamp());
     } catch {
         // ignore — room may have been deleted
     }
@@ -177,13 +183,13 @@ export async function startRound({ code, room }) {
     updates[`gameRooms/${code}/votes`] = null;
     updates[`gameRooms/${code}/updatedAt`] = serverTimestamp();
 
-    await update(dbRef(rtdb), updates);
+    await update(dbRef(requireRtdb()), updates);
 
     return { imposterUid, word };
 }
 
 export async function advanceToClues({ code }) {
-    await update(dbRef(rtdb, `gameRooms/${code}`), {
+    await update(dbRef(requireRtdb(), `gameRooms/${code}`), {
         status: 'clues',
         updatedAt: serverTimestamp(),
     });
@@ -218,11 +224,11 @@ export async function submitClue({ code, room, uid, word }) {
         updates[`gameRooms/${code}/votes`] = null;
     }
 
-    await update(dbRef(rtdb), updates);
+    await update(dbRef(requireRtdb()), updates);
 }
 
 export async function advanceToVoting({ code }) {
-    await update(dbRef(rtdb, `gameRooms/${code}`), {
+    await update(dbRef(requireRtdb(), `gameRooms/${code}`), {
         status: 'voting',
         votes: null,
         updatedAt: serverTimestamp(),
@@ -230,7 +236,7 @@ export async function advanceToVoting({ code }) {
 }
 
 export async function castVote({ code, voterUid, votedUid }) {
-    await update(dbRef(rtdb, `gameRooms/${code}`), {
+    await update(dbRef(requireRtdb(), `gameRooms/${code}`), {
         [`votes/${voterUid}`]: votedUid,
         [`players/${voterUid}/hasVoted`]: true,
         updatedAt: serverTimestamp(),
@@ -238,7 +244,7 @@ export async function castVote({ code, voterUid, votedUid }) {
 }
 
 export async function revealResults({ code, room }) {
-    await update(dbRef(rtdb, `gameRooms/${code}`), {
+    await update(dbRef(requireRtdb(), `gameRooms/${code}`), {
         status: 'results',
         publicWord: room?.round?.word ?? null,
         updatedAt: serverTimestamp(),
@@ -246,8 +252,8 @@ export async function revealResults({ code, room }) {
 }
 
 export async function resetToLobby({ code }) {
-    await remove(dbRef(rtdb, `gameSecrets/${code}`));
-    await update(dbRef(rtdb, `gameRooms/${code}`), {
+    await remove(dbRef(requireRtdb(), `gameSecrets/${code}`));
+    await update(dbRef(requireRtdb(), `gameRooms/${code}`), {
         status: 'lobby',
         round: null,
         publicWord: null,

@@ -10,7 +10,7 @@ export default function useGameRoom(code) {
     });
 
     useEffect(() => {
-        if (!code) return undefined;
+        if (!code || !rtdb) return undefined;
         const roomRef = dbRef(rtdb, `gameRooms/${code}`);
         const unsub = onValue(
             roomRef,
