@@ -38,6 +38,9 @@ import AdSenseAd from './components/AdSenseAd';
 import ProfilePage from './components/ProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import GamesPage from './components/GamesPage';
+import DatabasePicker from './components/DatabasePicker';
+import useCurrentDatabase from './hooks/useCurrentDatabase';
+import { leaveCurrentDatabase } from './lib/databases';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
@@ -123,6 +126,9 @@ export default function App() {
   const isMobile = useIsMobile();
   const onlineCount = useOnlineCount(user?.uid);
 
+  const currentDbId = userProfile?.currentDatabaseId || null;
+  const { database: currentDatabase, membership: currentMembership, isMain, loading: dbLoading } = useCurrentDatabase(user, currentDbId);
+
   // Auth Listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -155,10 +161,13 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return; // Don't fetch files if not authenticated
+    if (!user || !currentDbId) {
+      setFiles([]);
+      return;
+    }
 
-    // Listen to Firebase evidenceFiles collection
-    const filesCollection = collection(db, "evidenceFiles");
+    // Listen to Firebase evidenceFiles collection scoped to the current database
+    const filesCollection = collection(db, "databases", currentDbId, "evidenceFiles");
     const q = query(filesCollection, orderBy("id", "desc"));
 
     // MOCK FOR PLAYWRIGHT
@@ -170,6 +179,7 @@ export default function App() {
       return () => {};
     }
 
+    setLoading(true);
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       if (snapshot.empty) {
         setFiles([]);
@@ -194,7 +204,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, currentDbId]);
 
   const filteredFiles = useMemo(() => {
     let result = [...files];
@@ -294,7 +304,7 @@ export default function App() {
   };
 
   const processFileUpload = async (contextText, suspectNames) => {
-    if (!fileToUpload || !user) return;
+    if (!fileToUpload || !user || !currentDbId) return;
 
     setShowUploadModal(false);
     setUploading(true);
@@ -337,9 +347,9 @@ export default function App() {
         downvotes: 0
       };
 
-      await setDoc(doc(db, "evidenceFiles", newEvidence.id.toString()), newEvidence);
+      await setDoc(doc(db, "databases", currentDbId, "evidenceFiles", newEvidence.id.toString()), newEvidence);
 
-      await updateDoc(doc(db, "users", user.uid), {
+      await updateDoc(doc(db, "databases", currentDbId, "members", user.uid), {
         experiencePoints: increment(50)
       });
     } catch (error) {
@@ -358,7 +368,7 @@ export default function App() {
   const confirmPurge = async () => {
     const file = fileToPurge;
     setFileToPurge(null);
-    if (!file) return;
+    if (!file || !currentDbId) return;
 
     const docId = file.docId || file.id.toString();
     setDeletingId(docId);
@@ -371,7 +381,7 @@ export default function App() {
       }
 
       // 2. Delete from Firestore
-      await deleteDoc(doc(db, "evidenceFiles", docId));
+      await deleteDoc(doc(db, "databases", currentDbId, "evidenceFiles", docId));
     } catch (error) {
       console.error("Error deleting file:", error);
       alert("CRITICAL ERROR: Failed to purge record from archive.");
@@ -400,9 +410,30 @@ export default function App() {
     return <UsernamePrompt user={user} onComplete={setUserProfile} />;
   }
 
+  if (!currentDbId) {
+    return <DatabasePicker user={user} userProfile={userProfile} />;
+  }
+
+  if (dbLoading) {
+    return <LoadingScreen message="ESTABLISHING SECURE CHANNEL" />;
+  }
+
+  if (!currentDatabase) {
+    // Stale ref to a database that no longer exists — drop the user back to the picker.
+    return <DatabasePicker user={user} userProfile={userProfile} />;
+  }
+
   if (loading) {
     return <LoadingScreen message="ACCESSING CLOUD EVIDENCE ARCHIVE" />;
   }
+
+  const handleSwitchDatabase = async () => {
+    try {
+      await leaveCurrentDatabase({ user, dbId: currentDbId });
+    } catch (e) {
+      console.error('Failed to leave database:', e);
+    }
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent' }}>
@@ -412,13 +443,17 @@ export default function App() {
       <div className="relative z-10">
         <Header
             username={userProfile?.username}
-            experiencePoints={userProfile?.experiencePoints}
+            experiencePoints={currentMembership?.experiencePoints}
             lightMode={lightMode}
             onToggleLightMode={toggleLightMode}
             onlineCount={onlineCount}
             onShowProfile={() => setCurrentPage('profile')}
             onShowLeaderboard={() => setCurrentPage('leaderboard')}
             onShowGames={() => setCurrentPage('games')}
+            databaseName={currentDatabase?.name}
+            joinCode={currentDatabase?.joinCode}
+            isMain={isMain}
+            onSwitchDatabase={handleSwitchDatabase}
           />
 
         {/* Classification Banner */}
@@ -505,9 +540,9 @@ export default function App() {
 
             {filteredFiles.length > 0 ? filteredFiles.flatMap((file, index) => {
               const row = isMobile ? (
-                <MobileFileCard key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} />
+                <MobileFileCard key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} dbId={currentDbId} />
               ) : (
-                <FileRow key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} />
+                <FileRow key={file.id} file={file} index={index} fileNumber={filteredFiles.length - index} onRedactedClick={handleRedactedClick} user={user} userProfile={userProfile} onDelete={handleDeleteFile} isDeleting={deletingId === (file.docId || file.id.toString())} dbId={currentDbId} />
               );
               const showAd = (index + 1) % 5 === 0 && index + 1 < filteredFiles.length;
               return showAd ? [
@@ -555,12 +590,12 @@ export default function App() {
       <MemeEasterEgg />
 
       {currentPage === 'profile' && (
-        <ProfilePage user={user} userProfile={userProfile} files={files} onClose={() => setCurrentPage('main')} />
+        <ProfilePage user={user} userProfile={userProfile} files={files} membership={currentMembership} database={currentDatabase} onClose={() => setCurrentPage('main')} />
       )}
       {currentPage === 'leaderboard' && (
-        <LeaderboardPage user={user} files={files} onClose={() => setCurrentPage('main')} />
+        <LeaderboardPage user={user} files={files} dbId={currentDbId} database={currentDatabase} onClose={() => setCurrentPage('main')} />
       )}
-      {currentPage === 'games' && (
+      {currentPage === 'games' && isMain && (
         <GamesPage user={user} userProfile={userProfile} onClose={() => setCurrentPage('main')} />
       )}
 
@@ -573,6 +608,7 @@ export default function App() {
         onTriggerBreach={() => setBreached(true)}
         devBypassUploadLimit={devBypassUploadLimit}
         onSetDevBypassUploadLimit={setDevBypassUploadLimit}
+        dbId={currentDbId}
       />
 
       {/* Purge Confirmation Modal */}

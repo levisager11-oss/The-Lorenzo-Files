@@ -5,7 +5,7 @@ import RadarSeal from './RadarSeal';
 import ThemeToggle from './ThemeToggle';
 import useIsMobile from '../hooks/useIsMobile';
 
-export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard, onShowGames }) {
+export default function Header({ username, experiencePoints, lightMode, onToggleLightMode, onlineCount, onShowProfile, onShowLeaderboard, onShowGames, databaseName, joinCode, isMain, onSwitchDatabase }) {
     const [time, setTime] = useState(new Date());
     const isMobile = useIsMobile();
     const clickCount = { current: 0, timer: null };
@@ -61,14 +61,18 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                             }}
                         >
-                            {isMobile ? 'LORENZO FILES' : 'DEPARTMENT OF LORENZO'}
+                            {isMain || !databaseName
+                                ? (isMobile ? 'LORENZO FILES' : 'DEPARTMENT OF LORENZO')
+                                : (databaseName.length > (isMobile ? 18 : 32) ? databaseName.slice(0, isMobile ? 18 : 32) + '…' : databaseName).toUpperCase()}
                         </div>
                         {!isMobile && (
                             <div style={{
                                 fontFamily: 'var(--font-display)', fontSize: '0.7rem',
                                 letterSpacing: '0.4em', color: 'var(--c-tx2)', marginTop: 4, textTransform: 'uppercase',
                             }}>
-                                INTELLIGENCE MANAGEMENT SYSTEM // DELOS NETWORK NODE 7
+                                {isMain || !joinCode
+                                    ? 'INTELLIGENCE MANAGEMENT SYSTEM // DELOS NETWORK NODE 7'
+                                    : <>DEPARTMENT CODE · <span style={{ color: 'var(--c-ac)', letterSpacing: '0.3em' }}>{joinCode}</span></>}
                             </div>
                         )}
                     </div>
@@ -124,28 +128,53 @@ export default function Header({ username, experiencePoints, lightMode, onToggle
                             </div>
                         )}
                         <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-                            {/* Games button */}
-                            <button
-                                onClick={onShowGames}
-                                title="Recreational Protocols"
-                                style={{
-                                    background: 'rgba(255,45,85,0.08)', color: '#ff2d55',
-                                    border: '1px solid rgba(255,45,85,0.25)',
-                                    padding: isMobile ? '5px 8px' : '5px 10px', borderRadius: 2,
-                                    display: 'flex', alignItems: 'center', gap: 4,
-                                    cursor: 'pointer', transition: 'all 150ms',
-                                    fontFamily: 'var(--font-display)', fontWeight: 600,
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.18)'; e.currentTarget.style.borderColor = '#ff2d55'; }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,45,85,0.25)'; }}
-                            >
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="6" y1="11" x2="10" y2="11" /><line x1="8" y1="9" x2="8" y2="13" />
-                                    <line x1="15" y1="12" x2="15.01" y2="12" /><line x1="18" y1="10" x2="18.01" y2="10" />
-                                    <rect x="2" y="6" width="20" height="12" rx="2" />
-                                </svg>
-                                {!isMobile && <span style={{ fontSize: 9, letterSpacing: '0.1em' }}>GAMES</span>}
-                            </button>
+                            {/* Games button — only available in the original Lorenzo Files (main DB) */}
+                            {isMain && (
+                                <button
+                                    onClick={onShowGames}
+                                    title="Recreational Protocols"
+                                    style={{
+                                        background: 'rgba(255,45,85,0.08)', color: '#ff2d55',
+                                        border: '1px solid rgba(255,45,85,0.25)',
+                                        padding: isMobile ? '5px 8px' : '5px 10px', borderRadius: 2,
+                                        display: 'flex', alignItems: 'center', gap: 4,
+                                        cursor: 'pointer', transition: 'all 150ms',
+                                        fontFamily: 'var(--font-display)', fontWeight: 600,
+                                    }}
+                                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.18)'; e.currentTarget.style.borderColor = '#ff2d55'; }}
+                                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,45,85,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,45,85,0.25)'; }}
+                                >
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="6" y1="11" x2="10" y2="11" /><line x1="8" y1="9" x2="8" y2="13" />
+                                        <line x1="15" y1="12" x2="15.01" y2="12" /><line x1="18" y1="10" x2="18.01" y2="10" />
+                                        <rect x="2" y="6" width="20" height="12" rx="2" />
+                                    </svg>
+                                    {!isMobile && <span style={{ fontSize: 9, letterSpacing: '0.1em' }}>GAMES</span>}
+                                </button>
+                            )}
+                            {/* Switch department */}
+                            {onSwitchDatabase && (
+                                <button
+                                    onClick={onSwitchDatabase}
+                                    title="Switch department"
+                                    style={{
+                                        background: 'var(--ac-a08)', color: 'var(--c-ac)',
+                                        border: '1px solid var(--ac-a28)',
+                                        padding: isMobile ? '5px 8px' : '5px 10px', borderRadius: 2,
+                                        display: 'flex', alignItems: 'center', gap: 4,
+                                        cursor: 'pointer', transition: 'all 150ms',
+                                        fontFamily: 'var(--font-display)', fontWeight: 600,
+                                    }}
+                                    onMouseOver={e => { e.currentTarget.style.background = 'var(--ac-a12)'; e.currentTarget.style.borderColor = 'var(--c-ac)'; }}
+                                    onMouseOut={e => { e.currentTarget.style.background = 'var(--ac-a08)'; e.currentTarget.style.borderColor = 'var(--ac-a28)'; }}
+                                >
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                                        <polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                                    </svg>
+                                    {!isMobile && <span style={{ fontSize: 9, letterSpacing: '0.1em' }}>DEPT</span>}
+                                </button>
+                            )}
                             {/* Leaderboard button */}
                             <button
                                 onClick={onShowLeaderboard}
