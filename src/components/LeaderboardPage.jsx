@@ -6,16 +6,15 @@ import useIsMobile from '../hooks/useIsMobile';
 const RANK_COLORS = ['#ffd700', '#c0c0c0', '#cd7f32'];
 const RANK_LABELS = ['1ST', '2ND', '3RD'];
 
-export default function LeaderboardPage({ user, files, onClose, dbId, database }) {
+export default function LeaderboardPage({ user, files, onClose }) {
     const [leaders, setLeaders] = useState([]);
     const [loading, setLoading] = useState(true);
     const isMobile = useIsMobile();
 
     useEffect(() => {
-        if (!dbId) { setLoading(false); return; }
         const fetch = async () => {
             try {
-                const q = query(collection(db, "databases", dbId, "members"), orderBy("experiencePoints", "desc"), limit(50));
+                const q = query(collection(db, "users"), orderBy("experiencePoints", "desc"), limit(50));
                 const snap = await getDocs(q);
                 setLeaders(snap.docs.map(d => ({ uid: d.id, ...d.data() })));
             } catch (e) {
@@ -25,7 +24,7 @@ export default function LeaderboardPage({ user, files, onClose, dbId, database }
             }
         };
         fetch();
-    }, [dbId]);
+    }, []);
 
     const uploadCounts = {};
     files.forEach(f => {
@@ -59,9 +58,7 @@ export default function LeaderboardPage({ user, files, onClose, dbId, database }
                             <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
                             <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
                         </svg>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.28em', color: '#ffd700', textTransform: 'uppercase' }}>
-                            XP LEADERBOARD{database?.name ? ` · ${database.name.toUpperCase()}` : ''}
-                        </span>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, letterSpacing: '0.28em', color: '#ffd700', textTransform: 'uppercase' }}>XP LEADERBOARD</span>
                     </div>
                     <button onClick={onClose} style={{
                         background: 'transparent', border: '1px solid var(--ac-a28)', color: 'var(--c-tx2)',

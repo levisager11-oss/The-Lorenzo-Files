@@ -49,7 +49,6 @@ export default function DevMenu({
   onTriggerBreach,
   devBypassUploadLimit,
   onSetDevBypassUploadLimit,
-  dbId,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('stats');
@@ -96,8 +95,7 @@ export default function DevMenu({
     setPurgingAll(true);
     setPurgeAllResult(null);
     try {
-      if (!dbId) throw new Error('No active database');
-      const snapshot = await getDocs(collection(db, 'databases', dbId, 'evidenceFiles'));
+      const snapshot = await getDocs(collection(db, 'evidenceFiles'));
       let deleted = 0;
       let errors = 0;
       for (const docSnap of snapshot.docs) {
@@ -106,7 +104,7 @@ export default function DevMenu({
           try { await deleteObject(ref(storage, data.storagePath)); } catch { /* already gone */ }
         }
         try {
-          await deleteDoc(doc(db, 'databases', dbId, 'evidenceFiles', docSnap.id));
+          await deleteDoc(doc(db, 'evidenceFiles', docSnap.id));
           deleted++;
         } catch { errors++; }
       }
@@ -126,11 +124,10 @@ export default function DevMenu({
     setPurgingFileId(id);
     setPurgeFileTarget(null);
     try {
-      if (!dbId) throw new Error('No active database');
       if (file.storagePath) {
         try { await deleteObject(ref(storage, file.storagePath)); } catch { /* already gone */ }
       }
-      await deleteDoc(doc(db, 'databases', dbId, 'evidenceFiles', id));
+      await deleteDoc(doc(db, 'evidenceFiles', id));
     } catch (e) {
       alert(`Failed to purge "${file.name}": ${e.message}`);
     } finally {
@@ -147,8 +144,7 @@ export default function DevMenu({
     }
     setSavingStatusId(id);
     try {
-      if (!dbId) throw new Error('No active database');
-      await updateDoc(doc(db, 'databases', dbId, 'evidenceFiles', id), { status: newStatus });
+      await updateDoc(doc(db, 'evidenceFiles', id), { status: newStatus });
       setStatusEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
     } catch (e) {
       alert(`Failed to update status: ${e.message}`);
