@@ -42,7 +42,6 @@ export default function useCurrentDatabase(user, dbId) {
     return {
         database: effectiveDatabase,
         membership: effectiveMembership,
-        isMain: !!(effectiveDatabase && effectiveDatabase.isMain),
         loading: effectiveLoading,
     };
 }
