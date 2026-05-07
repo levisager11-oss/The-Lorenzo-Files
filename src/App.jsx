@@ -37,8 +37,12 @@ import MemeEasterEgg from './components/MemeEasterEgg';
 import ProfilePage from './components/ProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import GamesPage from './components/GamesPage';
+import ChatPanel from './components/ChatPanel';
+import useUnreadChatCount from './hooks/useUnreadChatCount';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+
+const GLOBAL_CHAT_ROOM = 'global';
 
 function LoadingScreen({ message }) {
   return (
@@ -109,12 +113,14 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [fileToUpload, setFileToUpload] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  
+
   // Purge State
   const [fileToPurge, setFileToPurge] = useState(null);
 
   // Page navigation
   const [currentPage, setCurrentPage] = useState('main'); // 'main' | 'profile' | 'leaderboard' | 'games'
+  const [chatOpen, setChatOpen] = useState(false);
+  const chatUnreadCount = useUnreadChatCount(GLOBAL_CHAT_ROOM, chatOpen);
 
   // Dev Menu State
   const [devBypassUploadLimit, setDevBypassUploadLimit] = useState(false);
@@ -197,13 +203,13 @@ export default function App() {
 
   const filteredFiles = useMemo(() => {
     let result = [...files];
-    
+
     // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((f) => f.name.toLowerCase().includes(q));
     }
-    
+
     // Filter by selected suspect
     if (selectedSuspect) {
       result = result.filter((f) => {
@@ -238,7 +244,7 @@ export default function App() {
       // date-desc (default)
       result.sort((a, b) => b.id - a.id);
     }
-    
+
     return result;
   }, [searchQuery, selectedSuspect, files, sortBy]);
 
@@ -418,6 +424,8 @@ export default function App() {
             onShowProfile={() => setCurrentPage('profile')}
             onShowLeaderboard={() => setCurrentPage('leaderboard')}
             onShowGames={() => setCurrentPage('games')}
+            onShowChat={() => setChatOpen(true)}
+            chatUnreadCount={chatUnreadCount}
           />
 
         {/* Classification Banner */}
@@ -551,6 +559,15 @@ export default function App() {
       )}
       {currentPage === 'games' && (
         <GamesPage user={user} userProfile={userProfile} onClose={() => setCurrentPage('main')} />
+      )}
+
+      {chatOpen && (
+        <ChatPanel
+          user={user}
+          userProfile={userProfile}
+          dbId={GLOBAL_CHAT_ROOM}
+          onClose={() => setChatOpen(false)}
+        />
       )}
 
       {/* Developer Menu (levi.sager11@gmail.com only) */}

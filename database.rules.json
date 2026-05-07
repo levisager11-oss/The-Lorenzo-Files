@@ -17,6 +17,51 @@
           ".write": "auth != null"
         }
       }
+    },
+
+    "departments": {
+      "$dbId": {
+        "chat": {
+          ".read": "auth != null",
+          ".indexOn": ["createdAt"],
+
+          "$msgId": {
+            ".write": "auth != null && (!data.exists() || data.child('authorId').val() === auth.uid)",
+            ".validate": "newData.hasChildren(['text', 'authorId', 'authorUsername', 'createdAt']) || !newData.exists()",
+
+            "text": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
+            },
+            "authorId": {
+              ".validate": "newData.isString() && newData.val() === auth.uid"
+            },
+            "authorUsername": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "createdAt": {
+              ".validate": "newData.val() === now"
+            },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "typing": {
+          ".read": "auth != null",
+
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid",
+            ".validate": "newData.hasChildren(['username', 'ts']) || !newData.exists()",
+
+            "username": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "ts": {
+              ".validate": "newData.val() === now"
+            },
+            "$other": { ".validate": false }
+          }
+        }
+      }
     }
   }
 }
