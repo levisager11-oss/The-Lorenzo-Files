@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useIsMobile from '../hooks/useIsMobile';
 import ImposterRoom from './games/imposter/ImposterRoom';
+import IceMonkeyCalc from './games/IceMonkeyCalc';
 import { createRoom, joinRoom } from '../lib/imposterGame';
 
 const GAMES = [
@@ -9,6 +10,13 @@ const GAMES = [
         name: 'IMPOSTER',
         codename: 'OPERATION: DECEPTION',
         tagline: 'One operative is lying. Find them before time runs out.',
+        live: true,
+    },
+    {
+        id: 'ice-monkey-calc',
+        name: 'T5 ICE CALC',
+        codename: 'BTD6 TACTICAL ANALYSIS',
+        tagline: 'Calculate maximum T5 Ice Monkeys with Silas across co-op players.',
         live: true,
     },
 ];
@@ -198,6 +206,18 @@ function GamesHub({ user, userProfile, onOpenImposter }) {
                         {err}
                     </div>
                 )}
+            </div>
+
+            {/* BTD6 T5 Ice Monkey Calculator */}
+            <div>
+                <div style={{
+                    fontFamily: 'var(--font-display)', fontSize: 9,
+                    letterSpacing: '0.28em', color: 'var(--c-tx3)',
+                    textTransform: 'uppercase', marginBottom: 14,
+                }}>
+                    BTD6 TACTICAL ANALYSIS — T5 ICE MONKEY CALCULATOR
+                </div>
+                <IceMonkeyCalc />
             </div>
         </div>
     );
